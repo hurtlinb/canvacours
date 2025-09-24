@@ -361,6 +361,7 @@
         var previousOrder = getActivitySlotOrderIndices(week.activities);
         week.startHalfDay = selectedValue;
         remapWeekActivitiesForHalfDay(week, previousOrder);
+        propagateFollowingWeekStartDates(week);
         saveData();
         renderBoard();
         updateSlotHelper();
