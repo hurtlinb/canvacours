@@ -34,7 +34,30 @@ jobs:
 
             git pull
 
+            echo "✅ Déploiement terminé"
+
+      # Ajout d'une étape de pause de 5 secondes
+      - name: Wait 5 seconds
+        run: sleep 5
+
+      - name: Restart
+        uses: appleboy/ssh-action@v1.2.0
+        continue-on-error: true
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASS }}
+          port: ${{ secrets.SSH_PORT }}
+          script_stop: true
+          script: |
+            set -e
+
+            APP_DIR="${{ secrets.APP_DIR }}"
+            BRANCH="main"  # <-- garde en phase avec 'on.push.branches'
+
+            echo "➡️  CD ${APP_DIR}"
+            cd "${APP_DIR}"
+
             npx pm2 restart index
 
-
-            echo "✅ Déploiement terminé"
+            echo "✅ Redémarrage terminé"
