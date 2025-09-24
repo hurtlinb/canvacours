@@ -1,8 +1,6 @@
 (function () {
   'use strict';
 
-  var storageKey = 'course-canvas-v2';
-  var legacyStorageKey = 'course-canvas-v1';
   var defaultWeeks = Array.from({ length: 5 }, function (_, index) {
     return {
       id: 'week-' + (index + 1),
@@ -138,33 +136,38 @@
   var renameCourseButton = document.getElementById('rename-course-button');
   var deleteCourseButton = document.getElementById('delete-course-button');
   var draggedActivityId = null;
-  var coursesState = loadCoursesState();
-  var courseData = getActiveCourseWeeks();
-
-  updateCourseSelector();
-  renderBoard();
+  var coursesState = null;
+  var courseData = [];
 
   if (courseSelector) {
     courseSelector.addEventListener('change', function (event) {
-      setActiveCourse(event.target.value);
+      setActiveCourse(event.target.value).catch(function (error) {
+        console.error('Impossible de sélectionner le cours demandé.', error);
+      });
     });
   }
 
   if (newCourseButton) {
     newCourseButton.addEventListener('click', function () {
-      createNewCourse();
+      createNewCourse().catch(function (error) {
+        console.error("Impossible de créer un nouveau cours.", error);
+      });
     });
   }
 
   if (renameCourseButton) {
     renameCourseButton.addEventListener('click', function () {
-      renameActiveCourse();
+      renameActiveCourse().catch(function (error) {
+        console.error('Le renommage du cours a échoué.', error);
+      });
     });
   }
 
   if (deleteCourseButton) {
     deleteCourseButton.addEventListener('click', function () {
-      deleteActiveCourse();
+      deleteActiveCourse().catch(function (error) {
+        console.error('La suppression du cours a échoué.', error);
+      });
     });
   }
 
@@ -178,7 +181,7 @@
     });
   }
 
-  board.addEventListener('click', function (event) {
+  board.addEventListener('click', async function (event) {
     var addTrigger = event.target.closest('[data-action="add-activity"]');
     if (addTrigger) {
       var addWeekId = addTrigger.getAttribute('data-week-id');
@@ -191,7 +194,11 @@
     if (deleteTrigger) {
       var deleteWeekId = deleteTrigger.getAttribute('data-week-id');
       var deleteActivityId = deleteTrigger.getAttribute('data-activity-id');
-      deleteActivity(deleteActivityId, deleteWeekId);
+      try {
+        await deleteActivity(deleteActivityId, deleteWeekId);
+      } catch (error) {
+        console.error("Impossible de supprimer l'activité.", error);
+      }
       return;
     }
 
@@ -233,7 +240,7 @@
     }
   });
 
-  form.addEventListener('submit', function (event) {
+  form.addEventListener('submit', async function (event) {
     event.preventDefault();
     var formData = new FormData(form);
     var activityId = formData.get('activityId');
@@ -254,16 +261,50 @@
     }
 
     var operationSucceeded = false;
-    if (activityId) {
-      operationSucceeded = updateActivity(activityId, selectedWeekId, payload);
-    } else {
-      operationSucceeded = addActivity(selectedWeekId, payload);
+    try {
+      if (activityId) {
+        operationSucceeded = await updateActivity(activityId, selectedWeekId, payload);
+      } else {
+        operationSucceeded = await addActivity(selectedWeekId, payload);
+      }
+    } catch (error) {
+      console.error("La sauvegarde de l'activité a échoué.", error);
+      operationSucceeded = false;
     }
 
     if (operationSucceeded) {
       closeForm();
     }
   });
+
+  initializeApp();
+
+  async function initializeApp() {
+    try {
+      coursesState = await loadCoursesState();
+    } catch (error) {
+      console.error('Impossible de charger les données depuis le serveur.', error);
+      coursesState = createInitialCoursesState();
+    }
+    courseData = getActiveCourseWeeks();
+    updateCourseSelector();
+    renderBoard();
+    updateSlotHelper();
+  }
+
+  async function reloadStateFromServer() {
+    try {
+      coursesState = await loadCoursesState();
+    } catch (error) {
+      console.error('Impossible de recharger les données depuis le serveur.', error);
+      coursesState = createInitialCoursesState();
+    }
+    courseData = getActiveCourseWeeks();
+    renderBoard();
+    updateSlotHelper();
+    updateCourseSelector();
+    return true;
+  }
 
   function renderBoard() {
     while (board.firstChild) {
@@ -319,9 +360,9 @@
       event.target.value = normalized;
       refreshWeekActivitiesDates(week);
       propagateFollowingWeekStartDates(week);
-      saveData();
-      renderBoard();
-      updateSlotHelper();
+      persistState().catch(function (error) {
+        console.error('La mise à jour de la date a échoué.', error);
+      });
     });
 
     datePicker.appendChild(dateLabel);
@@ -362,9 +403,9 @@
         week.startHalfDay = selectedValue;
         remapWeekActivitiesForHalfDay(week, previousOrder);
         propagateFollowingWeekStartDates(week);
-        saveData();
-        renderBoard();
-        updateSlotHelper();
+        persistState().catch(function (error) {
+          console.error('La mise à jour de la demi-journée a échoué.', error);
+        });
       });
 
       var text = document.createElement('span');
@@ -666,7 +707,7 @@
     clearSlotDropState(slotList);
   }
 
-  function handleSlotDrop(event) {
+  async function handleSlotDrop(event) {
     event.preventDefault();
     var slotList = event.currentTarget;
     var targetWeekId = slotList.getAttribute('data-week-id');
@@ -677,7 +718,11 @@
       return;
     }
     var slotIndex = countSlotActivitiesForWeek(targetWeekId, targetSlotId);
-    moveActivity(activityId, targetWeekId, targetSlotId, slotIndex);
+    try {
+      await moveActivity(activityId, targetWeekId, targetSlotId, slotIndex);
+    } catch (error) {
+      console.error('Impossible de déplacer cette activité.', error);
+    }
     draggedActivityId = null;
   }
 
@@ -709,7 +754,7 @@
     return null;
   }
 
-  function moveActivity(activityId, targetWeekId, targetSlotId, targetSlotIndex) {
+  async function moveActivity(activityId, targetWeekId, targetSlotId, targetSlotIndex) {
     if (!activityId || !targetWeekId) {
       return false;
     }
@@ -771,11 +816,10 @@
       normalizedTargetSlotId,
       targetSlotIndex
     );
-    persistState();
-    return true;
+    return persistState();
   }
 
-  function addActivity(weekId, activity) {
+  async function addActivity(weekId, activity) {
     if (!weekId) {
       return false;
     }
@@ -794,11 +838,10 @@
       sanitizedActivity,
       sanitizedActivity.slot
     );
-    persistState();
-    return true;
+    return persistState();
   }
 
-  function updateActivity(activityId, newWeekId, updatedData) {
+  async function updateActivity(activityId, newWeekId, updatedData) {
     if (!activityId || !newWeekId) {
       return false;
     }
@@ -873,11 +916,10 @@
       sanitizedActivity.slot,
       targetSlotIndex
     );
-    persistState();
-    return true;
+    return persistState();
   }
 
-  function deleteActivity(activityId, weekId) {
+  async function deleteActivity(activityId, weekId) {
     if (!activityId) {
       return false;
     }
@@ -900,8 +942,7 @@
       return false;
     }
     targetWeek.activities.splice(activityIndex, 1);
-    persistState();
-    return true;
+    return persistState();
   }
 
   function findWeekByActivityId(activityId) {
@@ -1063,22 +1104,22 @@
     return getActiveCourse().weeks;
   }
 
-  function setActiveCourse(courseId) {
+  async function setActiveCourse(courseId) {
     if (!coursesState || !Array.isArray(coursesState.courses)) {
-      return;
+      return false;
     }
     var targetCourse = coursesState.courses.find(function (course) {
       return course && course.id === courseId;
     });
     if (!targetCourse) {
-      return;
+      return false;
     }
     if (targetCourse.id === coursesState.activeCourseId) {
       courseData = targetCourse.weeks;
       renderBoard();
       updateSlotHelper();
       updateCourseSelector();
-      return;
+      return true;
     }
     coursesState.activeCourseId = targetCourse.id;
     courseData = targetCourse.weeks;
@@ -1090,13 +1131,10 @@
       }
       clearSlotValue();
     }
-    saveData();
-    renderBoard();
-    updateSlotHelper();
-    updateCourseSelector();
+    return persistState({ updateCourseSelector: true });
   }
 
-  function createNewCourse() {
+  async function createNewCourse() {
     if (!coursesState || !Array.isArray(coursesState.courses)) {
       coursesState = createInitialCoursesState();
     }
@@ -1107,10 +1145,10 @@
       weeks: cloneWeeks(defaultWeeks)
     };
     coursesState.courses.push(newCourse);
-    setActiveCourse(newCourse.id);
+    return setActiveCourse(newCourse.id);
   }
 
-  function deleteActiveCourse() {
+  async function deleteActiveCourse() {
     if (!coursesState || !Array.isArray(coursesState.courses)) {
       return false;
     }
@@ -1149,13 +1187,13 @@
       nextCourseId = nextCourse ? nextCourse.id : null;
     }
     if (typeof nextCourseId === 'string' && nextCourseId) {
-      setActiveCourse(nextCourseId);
+      await setActiveCourse(nextCourseId);
     } else {
       courseData = getActiveCourseWeeks();
-      saveData();
-      renderBoard();
-      updateSlotHelper();
-      updateCourseSelector();
+      var persisted = await persistState({ updateCourseSelector: true });
+      if (!persisted) {
+        return false;
+      }
     }
     if (courseSelector) {
       courseSelector.focus();
@@ -1163,13 +1201,13 @@
     return true;
   }
 
-  function renameActiveCourse() {
+  async function renameActiveCourse() {
     if (!coursesState || !Array.isArray(coursesState.courses)) {
-      return;
+      return false;
     }
     var activeCourse = getActiveCourse();
     if (!activeCourse) {
-      return;
+      return false;
     }
     var currentName =
       typeof activeCourse.name === 'string' && activeCourse.name.trim()
@@ -1177,11 +1215,11 @@
         : generateDefaultCourseName(1);
     var proposedName = window.prompt('Nom du cours', currentName);
     if (typeof proposedName !== 'string') {
-      return;
+      return false;
     }
     var trimmed = proposedName.trim();
     if (!trimmed) {
-      return;
+      return false;
     }
     var normalized = trimmed.toLowerCase();
     var duplicate = coursesState.courses.some(function (course) {
@@ -1195,36 +1233,39 @@
     });
     if (duplicate) {
       window.alert('Un cours avec ce nom existe déjà.');
-      return;
+      return false;
     }
     activeCourse.name = trimmed;
-    saveData();
-    updateCourseSelector();
+    var persisted = await persistState({ updateCourseSelector: true });
+    if (!persisted) {
+      return false;
+    }
     if (courseSelector) {
       courseSelector.value = activeCourse.id;
       courseSelector.focus();
     }
+    return true;
   }
 
-  function loadCoursesState() {
+  async function loadCoursesState() {
     try {
-      var raw = localStorage.getItem(storageKey);
-      var parsed = safeParse(raw);
-      var normalized = normalizeCoursesState(parsed);
+      var response = await fetch('/api/state', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('La réponse du serveur est invalide.');
+      }
+      var payload = await response.json();
+      var candidate = payload && (payload.state || payload.data || payload);
+      var normalized = normalizeCoursesState(candidate);
       if (normalized) {
         return normalized;
       }
-      var legacyRaw = typeof legacyStorageKey === 'string' ? localStorage.getItem(legacyStorageKey) : null;
-      var legacyParsed = safeParse(legacyRaw);
-      if (Array.isArray(legacyParsed)) {
-        var migratedCourse = createCourseFromWeeks(generateDefaultCourseName(1), legacyParsed);
-        return {
-          activeCourseId: migratedCourse.id,
-          courses: [migratedCourse]
-        };
-      }
     } catch (error) {
-      console.warn('Impossible de charger les données sauvegardées.', error);
+      console.warn('Impossible de charger les données depuis le serveur.', error);
     }
     return createInitialCoursesState();
   }
@@ -1369,18 +1410,6 @@
       candidate = generateDefaultCourseName(counter);
     }
     return candidate;
-  }
-
-  function safeParse(value) {
-    if (typeof value !== 'string' || !value) {
-      return null;
-    }
-    try {
-      return JSON.parse(value);
-    } catch (error) {
-      console.warn('Impossible de décoder les données sauvegardées.', error);
-      return null;
-    }
   }
 
   function updateSlotHelper() {
@@ -1600,22 +1629,48 @@
     return targetId;
   }
 
-  function saveData() {
+  async function saveData() {
     refreshAllActivitiesDates();
     getActiveCourse();
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(coursesState));
-      if (legacyStorageKey && legacyStorageKey !== storageKey) {
-        localStorage.removeItem(legacyStorageKey);
-      }
-    } catch (error) {
-      console.warn("Impossible d'enregistrer les données.", error);
+    var response = await fetch('/api/state', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ state: coursesState })
+    });
+    if (!response.ok) {
+      throw new Error('Le serveur a refusé la sauvegarde.');
     }
   }
 
-  function persistState() {
-    saveData();
+  async function persistState(options) {
+    try {
+      await saveData();
+    } catch (error) {
+      console.error("Impossible d'enregistrer les données sur le serveur.", error);
+      window.alert(
+        "Les modifications n'ont pas pu être enregistrées sur le serveur. Merci de réessayer."
+      );
+      await reloadStateFromServer();
+      return false;
+    }
     renderBoard();
+    var shouldUpdateSlotHelper = true;
+    if (options && Object.prototype.hasOwnProperty.call(options, 'updateSlotHelper')) {
+      shouldUpdateSlotHelper = options.updateSlotHelper;
+    }
+    if (shouldUpdateSlotHelper) {
+      updateSlotHelper();
+    }
+    var shouldUpdateCourseSelector = true;
+    if (options && Object.prototype.hasOwnProperty.call(options, 'updateCourseSelector')) {
+      shouldUpdateCourseSelector = options.updateCourseSelector;
+    }
+    if (shouldUpdateCourseSelector) {
+      updateCourseSelector();
+    }
+    return true;
   }
 
   function cloneWeeks(weeks) {
