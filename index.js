@@ -963,8 +963,8 @@ const server = http.createServer((req, res) => {
               ? '⏱ ' + activity.duration
               : '⏱ Temps à définir';
 
-            summary.appendChild(description);
             summary.appendChild(duration);
+            summary.appendChild(description);
 
             top.appendChild(badge);
             top.appendChild(summary);
