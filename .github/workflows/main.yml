@@ -32,11 +32,11 @@ jobs:
             echo "➡️  CD ${APP_DIR}"
             cd "${APP_DIR}"
 
-            git pull
+            # On force à renvoyer 0 même si git pull retourne une erreur
+            git pull || true
 
-            echo "✅ Déploiement terminé"
+            echo "✅ Déploiement terminé (même si warning ou erreur ignorée)"
 
-      # Ajout d'une étape de pause de 5 secondes
       - name: Wait 5 seconds
         run: sleep 5
 
@@ -58,6 +58,7 @@ jobs:
             echo "➡️  CD ${APP_DIR}"
             cd "${APP_DIR}"
 
-            npx pm2 restart index
+            # On ignore tout code d'erreur éventuel de pm2
+            npx pm2 restart index || true
 
-            echo "✅ Redémarrage terminé"
+            echo "✅ Redémarrage terminé (erreurs ignorées)"
