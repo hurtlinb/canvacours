@@ -361,6 +361,7 @@
         var previousOrder = getActivitySlotOrderIndices(week.activities);
         week.startHalfDay = selectedValue;
         remapWeekActivitiesForHalfDay(week, previousOrder);
+        propagateFollowingWeekStartDates(week, { propagateDates: false });
         saveData();
         renderBoard();
         updateSlotHelper();
@@ -1661,8 +1662,23 @@
     });
   }
 
-  function propagateFollowingWeekStartDates(changedWeek) {
+  function propagateFollowingWeekStartDates(changedWeek, options) {
     if (!changedWeek || !Array.isArray(courseData)) {
+      return;
+    }
+    var settings = {
+      propagateHalfDay: true,
+      propagateDates: true
+    };
+    if (options && typeof options === 'object') {
+      if (options.propagateHalfDay === false) {
+        settings.propagateHalfDay = false;
+      }
+      if (options.propagateDates === false) {
+        settings.propagateDates = false;
+      }
+    }
+    if (!settings.propagateHalfDay && !settings.propagateDates) {
       return;
     }
     var startIndex = courseData.findIndex(function (week) {
@@ -1680,28 +1696,51 @@
     if (startIndex === -1) {
       return;
     }
-    var previousStart = normalizeWeekStartDate(courseData[startIndex].startDate);
+    var previousStart = settings.propagateDates
+      ? normalizeWeekStartDate(courseData[startIndex].startDate)
+      : null;
+    var previousHalfDay = settings.propagateHalfDay
+      ? normalizeHalfDay(courseData[startIndex].startHalfDay)
+      : null;
     for (var index = startIndex + 1; index < courseData.length; index += 1) {
       var targetWeek = courseData[index];
       if (!targetWeek || typeof targetWeek !== 'object') {
         continue;
       }
-      if (previousStart) {
-        var previousDate = new Date(previousStart + 'T00:00:00');
-        if (isNaN(previousDate.getTime())) {
+      var halfDayChanged = false;
+      if (settings.propagateHalfDay) {
+        var currentHalfDay = normalizeHalfDay(targetWeek.startHalfDay);
+        halfDayChanged = currentHalfDay !== previousHalfDay;
+        targetWeek.startHalfDay = previousHalfDay;
+      }
+      if (settings.propagateDates) {
+        if (previousStart) {
+          var previousDate = new Date(previousStart + 'T00:00:00');
+          if (isNaN(previousDate.getTime())) {
+            targetWeek.startDate = '';
+            previousStart = '';
+          } else {
+            previousDate.setDate(previousDate.getDate() + 7);
+            var formatted = formatDateForInput(previousDate);
+            targetWeek.startDate = formatted;
+            previousStart = formatted;
+          }
+        } else {
           targetWeek.startDate = '';
           previousStart = '';
-        } else {
-          previousDate.setDate(previousDate.getDate() + 7);
-          var formatted = formatDateForInput(previousDate);
-          targetWeek.startDate = formatted;
-          previousStart = formatted;
         }
-      } else {
-        targetWeek.startDate = '';
-        previousStart = '';
       }
-      refreshWeekActivitiesDates(targetWeek);
+      if (settings.propagateHalfDay && halfDayChanged) {
+        synchronizeWeekActivitiesWithStartHalfDay(targetWeek);
+      } else {
+        refreshWeekActivitiesDates(targetWeek);
+      }
+      if (settings.propagateHalfDay) {
+        previousHalfDay = normalizeHalfDay(targetWeek.startHalfDay);
+      }
+      if (!settings.propagateDates) {
+        previousStart = normalizeWeekStartDate(targetWeek.startDate);
+      }
     }
   }
 
