@@ -10,10 +10,6 @@ const indexHtml = fs
   .readFileSync(INDEX_FILE, 'utf8')
   .replace(/%%APP_VERSION%%/g, APP_VERSION || '');
 
-function sendIndexHtml(res) {
-  res.type('html').send(indexHtml);
-}
-
 function createApp() {
   const app = express();
 
@@ -21,17 +17,13 @@ function createApp() {
 
   app.use('/api', apiRouter);
 
-  app.get(['/', '/index.html'], (req, res) => {
-    sendIndexHtml(res);
-  });
-
   app.use(express.static(PUBLIC_DIR, {
     fallthrough: true,
     extensions: ['html']
   }));
 
   app.get('*', (req, res) => {
-    sendIndexHtml(res);
+    res.type('html').send(indexHtml);
   });
 
   app.use((err, req, res, next) => {
