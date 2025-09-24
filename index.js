@@ -626,11 +626,11 @@ const server = http.createServer((req, res) => {
           <form id="activity-form">
             <input type="hidden" name="activityId" id="activity-id" />
             <input type="hidden" name="weekId" id="week-id" value="" />
+            <input type="hidden" name="slot" id="slot" value="" />
             <div class="form-group">
-              <label for="slot">Demi-journée</label>
-              <select id="slot" name="slot" required></select>
+              <label for="slot">Créneau planifié</label>
               <p class="form-helper" id="slot-helper">
-                La date affichée pour l'activité sera calculée automatiquement en fonction du créneau choisi.
+                La demi-journée est déterminée automatiquement en fonction du créneau depuis lequel vous ajoutez l'activité. La date affichée sera calculée en conséquence.
               </p>
             </div>
             <div class="form-group">
@@ -716,14 +716,14 @@ const server = http.createServer((req, res) => {
           }, {});
 
           var slotHelperDefaultText =
-            "La date affichée pour l'activité sera calculée automatiquement en fonction du créneau choisi.";
+            "La demi-journée est déterminée automatiquement en fonction du créneau depuis lequel vous ajoutez l'activité. La date affichée sera calculée en conséquence.";
 
           var board = document.getElementById('weeks-board');
           var modal = document.getElementById('activity-modal');
           var form = document.getElementById('activity-form');
           var formTitle = document.getElementById('form-title');
           var weekIdInput = document.getElementById('week-id');
-          var slotSelect = document.getElementById('slot');
+          var slotInput = document.getElementById('slot');
           var slotHelper = document.getElementById('slot-helper');
           if (slotHelper) {
             if (slotHelper.textContent && slotHelper.textContent.trim()) {
@@ -741,13 +741,8 @@ const server = http.createServer((req, res) => {
           var draggedActivityId = null;
           var courseData = loadData();
 
-          initializeSlotOptions();
           updateSlotHelper();
           renderBoard();
-
-          if (slotSelect) {
-            slotSelect.addEventListener('change', updateSlotHelper);
-          }
 
           board.addEventListener('click', function (event) {
             var addTrigger = event.target.closest('[data-action="add-activity"]');
@@ -1390,7 +1385,7 @@ const server = http.createServer((req, res) => {
             if (mode === 'edit' && options.activity) {
               formTitle.textContent = 'Modifier une activité';
               activityIdInput.value = options.activity.id;
-              setSelectValue(slotSelect, options.activity.slot);
+              setSlotValue(options.activity.slot);
               typeSelect.value =
                 options.activity.type && typeLabels[options.activity.type]
                   ? options.activity.type
@@ -1402,20 +1397,19 @@ const server = http.createServer((req, res) => {
               formTitle.textContent = 'Ajouter une activité';
               activityIdInput.value = '';
               if (typeof options.slotId === 'string' && options.slotId) {
-                setSelectValue(slotSelect, options.slotId);
+                setSlotValue(options.slotId);
               } else {
-                clearSelectValue(slotSelect);
+                clearSlotValue();
               }
               typeSelect.value = 'presentation';
               materialInput.value = '';
             }
-            updateSlotHelper();
             modal.classList.add('is-open');
             modal.setAttribute('aria-hidden', 'false');
             document.body.classList.add('modal-open');
             window.setTimeout(function () {
-              if (slotSelect) {
-                slotSelect.focus();
+              if (typeSelect) {
+                typeSelect.focus();
               }
             }, 100);
           }
@@ -1429,43 +1423,38 @@ const server = http.createServer((req, res) => {
             if (weekIdInput) {
               weekIdInput.value = '';
             }
-            if (slotHelper) {
-              slotHelper.textContent = slotHelperDefaultText;
-            }
+            clearSlotValue();
           }
 
-          function clearSelectValue(select) {
-            if (!select) {
+          function clearSlotValue() {
+            if (!slotInput) {
+              if (slotHelper) {
+                slotHelper.textContent = slotHelperDefaultText;
+              }
               return;
             }
-            var placeholderOption = select.querySelector('option[value=""]');
-            if (placeholderOption) {
-              placeholderOption.selected = true;
-            } else {
-              select.selectedIndex = -1;
-            }
-            select.value = '';
+            slotInput.value = '';
+            updateSlotHelper();
           }
 
-          function setSelectValue(select, value) {
-            if (!select) {
+          function setSlotValue(value) {
+            if (!slotInput) {
               return;
             }
-            if (typeof value !== 'string' || !value) {
-              clearSelectValue(select);
-              return;
-            }
-            var found = false;
-            for (var i = 0; i < select.options.length; i += 1) {
-              if (select.options[i].value === value) {
-                select.selectedIndex = i;
-                found = true;
-                break;
+            if (typeof value === 'string') {
+              var trimmed = value.trim();
+              if (trimmed && halfDaySlotMap[trimmed]) {
+                slotInput.value = trimmed;
+                updateSlotHelper();
+                return;
+              }
+              if (trimmed) {
+                slotInput.value = normalizeSlotId(trimmed);
+                updateSlotHelper();
+                return;
               }
             }
-            if (!found) {
-              clearSelectValue(select);
-            }
+            clearSlotValue();
           }
 
           function loadData() {
@@ -1509,39 +1498,25 @@ const server = http.createServer((req, res) => {
             }
           }
 
-          function initializeSlotOptions() {
-            if (!slotSelect) {
-              return;
-            }
-            slotSelect.innerHTML = '';
-            var placeholderOption = document.createElement('option');
-            placeholderOption.value = '';
-            placeholderOption.textContent = 'Sélectionnez une demi-journée';
-            placeholderOption.disabled = true;
-            placeholderOption.selected = true;
-            placeholderOption.defaultSelected = true;
-            slotSelect.appendChild(placeholderOption);
-            halfDaySlots.forEach(function (slot) {
-              var option = document.createElement('option');
-              option.value = slot.id;
-              option.textContent = slot.label;
-              slotSelect.appendChild(option);
-            });
-            if (slotSelect.options.length > 0) {
-              slotSelect.selectedIndex = 0;
-            }
-          }
-
           function updateSlotHelper() {
             if (!slotHelper) {
               return;
             }
-            if (!slotSelect) {
+            if (!slotInput) {
               slotHelper.textContent = slotHelperDefaultText;
               return;
             }
             var selectedWeekId = weekIdInput ? weekIdInput.value : '';
-            var selectedSlotId = slotSelect.value;
+            var selectedSlotId = slotInput.value;
+            if (!selectedSlotId) {
+              slotHelper.textContent = slotHelperDefaultText;
+              return;
+            }
+            var slot = halfDaySlotMap[selectedSlotId];
+            if (!slot) {
+              slotHelper.textContent = slotHelperDefaultText;
+              return;
+            }
             if (!selectedWeekId) {
               slotHelper.textContent = slotHelperDefaultText;
               return;
@@ -1550,11 +1525,6 @@ const server = http.createServer((req, res) => {
               return item.id === selectedWeekId;
             });
             if (!week) {
-              slotHelper.textContent = slotHelperDefaultText;
-              return;
-            }
-            var slot = halfDaySlotMap[selectedSlotId];
-            if (!slot) {
               slotHelper.textContent = slotHelperDefaultText;
               return;
             }
