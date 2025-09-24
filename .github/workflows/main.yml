@@ -1,0 +1,51 @@
+name: Deploy via SSH (git pull)
+
+on:
+  push:
+    branches: [ ${{ vars.BRANCH || 'main' }} ]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy on Infomaniak (SSH + git pull)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASS }}
+          port: ${{ secrets.SSH_PORT }}
+          # Conseil: active un timeout un peu large si besoin (ex: 10m)
+          script_stop: true
+          script: |
+            set -e
+
+            APP_DIR="${{ secrets.APP_DIR }}"
+            BRANCH="${{ secrets.BRANCH || 'main' }}"
+            NODE_ENV_VAL="${{ secrets.NODE_ENV || 'production' }}"
+            PM2_APP="${{ secrets.PM2_APP }}"
+
+            echo "➡️  CD ${APP_DIR}"
+            cd "${APP_DIR}"
+
+            echo "➡️  Reset local changes (optionnel, plus robuste)"
+            git fetch origin "${BRANCH}"
+            git checkout "${BRANCH}"
+            git reset --hard "origin/${BRANCH}"
+
+            echo "➡️  Install deps (prod only) & build si présent"
+            export NODE_ENV="${NODE_ENV_VAL}"
+            if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+              npm ci --omit=dev
+            else
+              npm install --omit=dev
+            fi
+            npm run build --if-present
+
+
+            echo "✅ Déploiement terminé"
