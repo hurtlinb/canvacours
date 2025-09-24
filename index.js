@@ -697,16 +697,16 @@ const server = http.createServer((req, res) => {
               dayOffset: 0
             },
             {
-              id: 'wednesday-am',
+              id: 'monday-pm',
               label: 'Demi-journée 2',
-              dayLabel: 'Mercredi matin',
-              dayOffset: 2
+              dayLabel: 'Lundi après-midi',
+              dayOffset: 0
             },
             {
-              id: 'friday-am',
+              id: 'tuesday-am',
               label: 'Demi-journée 3',
-              dayLabel: 'Vendredi matin',
-              dayOffset: 4
+              dayLabel: 'Mardi matin',
+              dayOffset: 1
             }
           ];
 
@@ -714,6 +714,11 @@ const server = http.createServer((req, res) => {
             accumulator[slot.id] = slot;
             return accumulator;
           }, {});
+
+          var legacySlotIdMap = {
+            'wednesday-am': 'monday-pm',
+            'friday-am': 'tuesday-am'
+          };
 
           var slotHelperDefaultText =
             "La date affichée pour l'activité sera calculée automatiquement en fonction du créneau choisi.";
@@ -1719,6 +1724,9 @@ const server = http.createServer((req, res) => {
           function normalizeSlotId(slotId) {
             if (slotId && halfDaySlotMap[slotId]) {
               return slotId;
+            }
+            if (slotId && legacySlotIdMap[slotId]) {
+              return legacySlotIdMap[slotId];
             }
             return halfDaySlots[0].id;
           }
