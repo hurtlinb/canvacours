@@ -600,15 +600,12 @@ const server = http.createServer((req, res) => {
           <h2 id="form-title">Ajouter une activité</h2>
           <form id="activity-form">
             <input type="hidden" name="activityId" id="activity-id" />
-            <div class="form-group">
-              <label for="week-select">Semaine</label>
-              <select id="week-select" name="weekId" required></select>
-            </div>
+            <input type="hidden" name="weekId" id="week-id" value="" />
             <div class="form-group">
               <label for="slot">Demi-journée</label>
               <select id="slot" name="slot" required></select>
               <p class="form-helper" id="slot-helper">
-                La date affichée pour l'activité sera calculée automatiquement à partir de la semaine sélectionnée.
+                La date affichée pour l'activité sera calculée automatiquement en fonction du créneau choisi.
               </p>
             </div>
             <div class="form-group">
@@ -686,13 +683,13 @@ const server = http.createServer((req, res) => {
           }, {});
 
           var slotHelperDefaultText =
-            "La date affichée pour l'activité sera calculée automatiquement à partir de la semaine sélectionnée.";
+            "La date affichée pour l'activité sera calculée automatiquement en fonction du créneau choisi.";
 
           var board = document.getElementById('weeks-board');
           var modal = document.getElementById('activity-modal');
           var form = document.getElementById('activity-form');
           var formTitle = document.getElementById('form-title');
-          var weekSelect = document.getElementById('week-select');
+          var weekIdInput = document.getElementById('week-id');
           var slotSelect = document.getElementById('slot');
           var slotHelper = document.getElementById('slot-helper');
           if (slotHelper) {
@@ -711,14 +708,9 @@ const server = http.createServer((req, res) => {
           var draggedActivityId = null;
           var courseData = loadData();
 
-          initializeWeekOptions();
           initializeSlotOptions();
           updateSlotHelper();
           renderBoard();
-
-          if (weekSelect) {
-            weekSelect.addEventListener('change', updateSlotHelper);
-          }
 
           if (slotSelect) {
             slotSelect.addEventListener('change', updateSlotHelper);
@@ -828,16 +820,7 @@ const server = http.createServer((req, res) => {
             var title = document.createElement('h2');
             title.textContent = week.name;
 
-            var addButton = document.createElement('button');
-            addButton.type = 'button';
-            addButton.className = 'btn-secondary';
-            addButton.setAttribute('data-action', 'add-activity');
-            addButton.setAttribute('data-week-id', week.id);
-            addButton.setAttribute('data-slot-id', halfDaySlots[0].id);
-            addButton.textContent = 'Ajouter une activité';
-
             titleRow.appendChild(title);
-            titleRow.appendChild(addButton);
 
             var datePicker = document.createElement('label');
             datePicker.className = 'week-date-picker';
@@ -1348,10 +1331,20 @@ const server = http.createServer((req, res) => {
               options = {};
             }
             form.reset();
+            var targetWeekId =
+              typeof options.weekId === 'string' ? options.weekId : '';
+            if (!targetWeekId && options.activity && options.activity.id) {
+              var owningWeek = findWeekByActivityId(options.activity.id);
+              if (owningWeek) {
+                targetWeekId = owningWeek.id;
+              }
+            }
+            if (weekIdInput) {
+              weekIdInput.value = targetWeekId;
+            }
             if (mode === 'edit' && options.activity) {
               formTitle.textContent = 'Modifier une activité';
               activityIdInput.value = options.activity.id;
-              setSelectValue(weekSelect, options.weekId || options.activity.weekId);
               setSelectValue(slotSelect, options.activity.slot);
               typeSelect.value =
                 options.activity.type && typeLabels[options.activity.type]
@@ -1363,7 +1356,6 @@ const server = http.createServer((req, res) => {
             } else {
               formTitle.textContent = 'Ajouter une activité';
               activityIdInput.value = '';
-              setSelectValue(weekSelect, options.weekId);
               setSelectValue(slotSelect, options.slotId);
               typeSelect.value = 'presentation';
               materialInput.value = '';
@@ -1385,6 +1377,9 @@ const server = http.createServer((req, res) => {
             document.body.classList.remove('modal-open');
             form.reset();
             activityIdInput.value = '';
+            if (weekIdInput) {
+              weekIdInput.value = '';
+            }
             if (slotHelper) {
               slotHelper.textContent = slotHelperDefaultText;
             }
@@ -1443,22 +1438,6 @@ const server = http.createServer((req, res) => {
             }
           }
 
-          function initializeWeekOptions() {
-            if (!weekSelect) {
-              return;
-            }
-            weekSelect.innerHTML = '';
-            courseData.forEach(function (week) {
-              var option = document.createElement('option');
-              option.value = week.id;
-              option.textContent = week.name;
-              weekSelect.appendChild(option);
-            });
-            if (weekSelect.options.length > 0) {
-              weekSelect.selectedIndex = 0;
-            }
-          }
-
           function initializeSlotOptions() {
             if (!slotSelect) {
               return;
@@ -1479,12 +1458,16 @@ const server = http.createServer((req, res) => {
             if (!slotHelper) {
               return;
             }
-            if (!weekSelect || !slotSelect) {
+            if (!slotSelect) {
               slotHelper.textContent = slotHelperDefaultText;
               return;
             }
-            var selectedWeekId = weekSelect.value;
+            var selectedWeekId = weekIdInput ? weekIdInput.value : '';
             var selectedSlotId = slotSelect.value;
+            if (!selectedWeekId) {
+              slotHelper.textContent = slotHelperDefaultText;
+              return;
+            }
             var week = courseData.find(function (item) {
               return item.id === selectedWeekId;
             });
