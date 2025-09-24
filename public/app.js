@@ -81,6 +81,12 @@
       label: 'Mardi matin',
       timeLabel: 'matin',
       dayOffset: 1
+    },
+    {
+      id: 'tuesday-pm',
+      label: 'Mardi après-midi',
+      timeLabel: 'après-midi',
+      dayOffset: 1
     }
   ];
 
@@ -163,6 +169,7 @@
       if (weekIdInput) {
         weekIdInput.value = typeof event.target.value === 'string' ? event.target.value : '';
       }
+      updateSlotRadiosAvailability();
       updateSlotHelper();
     });
   }
@@ -269,6 +276,7 @@
       desiredWeekId = weekSelect.value;
     }
     applyWeekSelection(desiredWeekId);
+    updateSlotRadiosAvailability();
     updateSlotHelper();
   }
 
@@ -926,6 +934,7 @@
     if (weekIdInput) {
       weekIdInput.value = appliedWeekId;
     }
+    updateSlotRadiosAvailability();
     if (mode === 'edit' && options.activity) {
       formTitle.textContent = 'Modifier une activité';
       activityIdInput.value = options.activity.id;
@@ -1444,6 +1453,7 @@
       slotRadioInputs.push(input);
     });
     updateSlotRadios(slotInput ? slotInput.value : '');
+    updateSlotRadiosAvailability();
   }
 
   function handleSlotRadioChange(event) {
@@ -1468,6 +1478,63 @@
     slotRadioInputs.forEach(function (input) {
       input.checked = input.value === normalized;
     });
+  }
+
+  function updateSlotRadiosAvailability() {
+    if (!slotRadioInputs || slotRadioInputs.length === 0) {
+      return;
+    }
+    var selectedWeekId = '';
+    if (weekIdInput && typeof weekIdInput.value === 'string' && weekIdInput.value) {
+      selectedWeekId = weekIdInput.value;
+    } else if (weekSelect && typeof weekSelect.value === 'string' && weekSelect.value) {
+      selectedWeekId = weekSelect.value;
+    }
+    var allowedIds = [];
+    if (selectedWeekId && Array.isArray(courseData)) {
+      var matchingWeek = courseData.find(function (item) {
+        return item && item.id === selectedWeekId;
+      });
+      if (matchingWeek) {
+        allowedIds = getOrderedHalfDaySlotsForWeek(matchingWeek).map(function (slot) {
+          return slot.id;
+        });
+      }
+    }
+    if (allowedIds.length === 0) {
+      allowedIds = halfDaySlots.slice(0, 3).map(function (slot) {
+        return slot.id;
+      });
+    }
+    var allowedSet = {};
+    allowedIds.forEach(function (id) {
+      allowedSet[id] = true;
+    });
+    slotRadioInputs.forEach(function (input) {
+      var isAllowed = !!allowedSet[input.value];
+      input.disabled = !isAllowed;
+      if (!isAllowed) {
+        input.checked = false;
+      }
+      var label = input.parentElement;
+      if (label) {
+        label.hidden = !isAllowed;
+      }
+    });
+    if (!slotInput) {
+      return;
+    }
+    var currentValue = typeof slotInput.value === 'string' ? slotInput.value : '';
+    if (currentValue && allowedSet[currentValue]) {
+      return;
+    }
+    if (allowedIds.length > 0) {
+      slotInput.value = allowedIds[0];
+      updateSlotRadios(allowedIds[0]);
+      updateSlotHelper();
+      return;
+    }
+    clearSlotValue();
   }
 
   function clearSlotRadios() {
@@ -1747,19 +1814,20 @@
 
   function getOrderedHalfDaySlotsForWeek(week) {
     var startSlotId = getWeekStartSlotId(week);
-    var baseSlots = halfDaySlots.slice();
-    var startIndex = baseSlots.findIndex(function (slot) {
+    var startIndex = halfDaySlots.findIndex(function (slot) {
       return slot.id === startSlotId;
     });
-    if (startIndex <= 0) {
-      return baseSlots;
+    if (startIndex === -1) {
+      startIndex = 0;
     }
-    var orderedSlots = [baseSlots[startIndex]];
-    baseSlots.forEach(function (slot, index) {
-      if (index !== startIndex) {
-        orderedSlots.push(slot);
+    var orderedSlots = [];
+    for (var i = 0; i < 3; i += 1) {
+      var index = startIndex + i;
+      if (index >= halfDaySlots.length) {
+        break;
       }
-    });
+      orderedSlots.push(halfDaySlots[index]);
+    }
     return orderedSlots;
   }
 
