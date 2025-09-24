@@ -1957,7 +1957,13 @@
       if (relativePosition > lastTargetIndex) {
         relativePosition = lastTargetIndex;
       }
-      var mappedIndex = targetOrder[relativePosition] || targetOrder[lastTargetIndex];
+      var mappedIndex = targetOrder[relativePosition];
+      if (typeof mappedIndex !== 'number') {
+        mappedIndex = targetOrder[lastTargetIndex];
+      }
+      if (typeof mappedIndex !== 'number') {
+        mappedIndex = targetOrder[0];
+      }
       var mappedSlot = halfDaySlots[mappedIndex];
       activity.slot = mappedSlot ? mappedSlot.id : defaultSlotId;
     });
