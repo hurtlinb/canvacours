@@ -244,12 +244,7 @@
       slotTitle.className = 'slot-title';
       slotTitle.textContent = slot.label;
 
-      var slotSubtitle = document.createElement('span');
-      slotSubtitle.className = 'slot-subtitle';
-      slotSubtitle.textContent = formatSlotSubtitle(week, slot.id);
-
       slotInfo.appendChild(slotTitle);
-      slotInfo.appendChild(slotSubtitle);
 
       var slotAddButton = document.createElement('button');
       slotAddButton.type = 'button';
@@ -1025,18 +1020,6 @@
       month: 'long',
       year: 'numeric'
     });
-  }
-
-  function formatSlotSubtitle(week, slotId) {
-    var slot = halfDaySlotMap[slotId];
-    if (!slot) {
-      return '';
-    }
-    var dayLabel = formatSlotDayLabel(week.startDate, slot);
-    if (dayLabel) {
-      return dayLabel;
-    }
-    return slot.label || '';
   }
 
   function formatSlotDayLabel(weekStartDate, slot) {

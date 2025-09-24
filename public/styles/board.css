@@ -124,11 +124,6 @@
   color: var(--grey-900);
 }
 
-.slot-subtitle {
-  font-size: 0.85rem;
-  color: var(--grey-500);
-}
-
 .slot-activities {
   display: flex;
   flex-direction: column;
