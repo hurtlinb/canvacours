@@ -318,6 +318,7 @@
       week.startDate = normalized;
       event.target.value = normalized;
       refreshWeekActivitiesDates(week);
+      propagateFollowingWeekStartDates(week);
       saveData();
       renderBoard();
       updateSlotHelper();
@@ -1658,6 +1659,50 @@
     courseData.forEach(function (week) {
       refreshWeekActivitiesDates(week);
     });
+  }
+
+  function propagateFollowingWeekStartDates(changedWeek) {
+    if (!changedWeek || !Array.isArray(courseData)) {
+      return;
+    }
+    var startIndex = courseData.findIndex(function (week) {
+      if (!week || typeof week !== 'object') {
+        return false;
+      }
+      if (week === changedWeek) {
+        return true;
+      }
+      if (changedWeek && week.id && changedWeek.id) {
+        return week.id === changedWeek.id;
+      }
+      return false;
+    });
+    if (startIndex === -1) {
+      return;
+    }
+    var previousStart = normalizeWeekStartDate(courseData[startIndex].startDate);
+    for (var index = startIndex + 1; index < courseData.length; index += 1) {
+      var targetWeek = courseData[index];
+      if (!targetWeek || typeof targetWeek !== 'object') {
+        continue;
+      }
+      if (previousStart) {
+        var previousDate = new Date(previousStart + 'T00:00:00');
+        if (isNaN(previousDate.getTime())) {
+          targetWeek.startDate = '';
+          previousStart = '';
+        } else {
+          previousDate.setDate(previousDate.getDate() + 7);
+          var formatted = formatDateForInput(previousDate);
+          targetWeek.startDate = formatted;
+          previousStart = formatted;
+        }
+      } else {
+        targetWeek.startDate = '';
+        previousStart = '';
+      }
+      refreshWeekActivitiesDates(targetWeek);
+    }
   }
 
   function refreshWeekActivitiesDates(week) {
