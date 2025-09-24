@@ -33,31 +33,6 @@ jobs:
             echo "➡️  CD ${APP_DIR}"
             cd "${APP_DIR}"
 
-            echo "➡️  Reset local changes (plus robuste que pull)"
-            git fetch origin "${BRANCH}"
-            git checkout "${BRANCH}"
-            git reset --hard "origin/${BRANCH}"
-
-            echo "➡️  Install deps (prod) & build"
-            export NODE_ENV="${NODE_ENV_VAL}"
-            if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
-              npm ci --omit=dev
-            else
-              npm install --omit=dev
-            fi
-            npm run build --if-present
-
-            echo "➡️  Migrations (si présent)"
-            npm run migrate --if-present
-
-            echo "➡️  PM2 (optionnel)"
-            if [ -n "${PM2_APP}" ]; then
-              if pm2 list | grep -q "${PM2_APP}"; then
-                pm2 reload "${PM2_APP}" --update-env
-              else
-                pm2 start npm --name "${PM2_APP}" -- start
-              fi
-              pm2 save
-            fi
+            git pull
 
             echo "✅ Déploiement terminé"
