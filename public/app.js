@@ -8,6 +8,7 @@
       id: 'week-' + (index + 1),
       name: 'Semaine ' + (index + 1),
       startDate: '',
+      startHalfDay: 'am',
       activities: []
     };
   });
@@ -36,6 +37,16 @@
 
   var typeAliases = {
     exercice: 'exercice-individuel'
+  };
+
+  var halfDayChoiceLabels = {
+    am: 'Matin',
+    pm: 'Après-midi'
+  };
+
+  var weekStartSlotByHalfDay = {
+    am: 'monday-am',
+    pm: 'monday-pm'
   };
 
   function normalizeActivityType(value) {
@@ -73,10 +84,12 @@
     }
   ];
 
-  var halfDaySlotMap = halfDaySlots.reduce(function (accumulator, slot) {
-    accumulator[slot.id] = slot;
-    return accumulator;
-  }, {});
+  var defaultSlotId = halfDaySlots.length > 0 ? halfDaySlots[0].id : '';
+
+  var halfDaySlotMap = {};
+  halfDaySlots.forEach(function (slot) {
+    halfDaySlotMap[slot.id] = slot;
+  });
 
   var legacySlotIdMap = {
     'wednesday-am': 'monday-pm',
@@ -301,8 +314,64 @@
     header.appendChild(titleRow);
     header.appendChild(datePicker);
 
+    var startHalfDay = normalizeHalfDay(week.startHalfDay);
+    week.startHalfDay = startHalfDay;
+
+    var halfDayToggle = document.createElement('div');
+    halfDayToggle.className = 'week-halfday-toggle';
+
+    var halfDayLabel = document.createElement('span');
+    halfDayLabel.className = 'week-halfday-toggle-label';
+    halfDayLabel.textContent = 'Démarrage';
+    halfDayLabel.id = 'week-' + week.id + '-start-halfday-label';
+    halfDayToggle.appendChild(halfDayLabel);
+
+    var halfDayOptions = document.createElement('div');
+    halfDayOptions.className = 'week-halfday-toggle-options';
+    halfDayOptions.setAttribute('role', 'radiogroup');
+    halfDayOptions.setAttribute('aria-labelledby', halfDayLabel.id);
+
+    ['am', 'pm'].forEach(function (halfDayValue) {
+      var optionLabel = document.createElement('label');
+      optionLabel.className = 'week-halfday-toggle-option';
+
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'start-halfday-' + week.id;
+      input.value = halfDayValue;
+      input.checked = startHalfDay === halfDayValue;
+      var optionText = halfDayChoiceLabels[halfDayValue] || halfDayChoiceLabels.am;
+      input.setAttribute('aria-label', optionText + ' - début du cours');
+      input.addEventListener('change', function (event) {
+        if (!event.target.checked) {
+          return;
+        }
+        var selectedValue = normalizeHalfDay(event.target.value);
+        week.startHalfDay = selectedValue;
+        saveData();
+        renderBoard();
+        updateSlotHelper();
+      });
+
+      var text = document.createElement('span');
+      text.textContent = optionText;
+
+      if (input.checked) {
+        optionLabel.classList.add('is-active');
+      }
+
+      optionLabel.appendChild(input);
+      optionLabel.appendChild(text);
+      halfDayOptions.appendChild(optionLabel);
+    });
+
+    halfDayToggle.appendChild(halfDayOptions);
+    header.appendChild(halfDayToggle);
+
     var slotsWrapper = document.createElement('div');
     slotsWrapper.className = 'week-slots';
+
+    var startSlotId = getWeekStartSlotId(week);
 
     halfDaySlots.forEach(function (slot) {
       var slotSection = document.createElement('section');
@@ -321,7 +390,19 @@
       var slotTitleText = formatSlotDayLabel(week.startDate, slot);
       slotTitle.textContent = slotTitleText || slot.label;
 
+      var isStartSlot = slot.id === startSlotId;
+      if (isStartSlot) {
+        slotSection.classList.add('slot-start');
+      }
+
       slotInfo.appendChild(slotTitle);
+
+      if (isStartSlot) {
+        var startBadge = document.createElement('span');
+        startBadge.className = 'slot-start-badge';
+        startBadge.textContent = 'Début du cours';
+        slotInfo.appendChild(startBadge);
+      }
 
       var slotAddButton = document.createElement('button');
       slotAddButton.type = 'button';
@@ -1243,10 +1324,12 @@
         : [];
       var weekName =
         typeof savedWeek.name === 'string' && savedWeek.name.trim() ? savedWeek.name.trim() : defaultWeek.name;
+      var startHalfDay = normalizeHalfDay(savedWeek.startHalfDay);
       return {
         id: defaultWeek.id,
         name: weekName,
         startDate: startDate,
+        startHalfDay: startHalfDay,
         activities: activities
       };
     });
@@ -1318,9 +1401,14 @@
       slotHelper.textContent = slotHelperDefaultText;
       return;
     }
+    var startSlotId = getWeekStartSlotId(week);
     var dayLabel = formatSlotDayLabel(week.startDate, slot);
     if (dayLabel) {
-      slotHelper.textContent = dayLabel;
+      if (slot.id === startSlotId) {
+        slotHelper.textContent = dayLabel + ' (début du cours)';
+      } else {
+        slotHelper.textContent = dayLabel;
+      }
       return;
     }
     if (slot.label) {
@@ -1476,6 +1564,7 @@
       id: week.id,
       name: week.name,
       startDate: normalizeWeekStartDate(week.startDate),
+      startHalfDay: normalizeHalfDay(week.startHalfDay),
       activities: []
     };
   }
@@ -1519,6 +1608,7 @@
     }
     var normalizedStart = normalizeWeekStartDate(week.startDate);
     week.startDate = normalizedStart;
+    week.startHalfDay = normalizeHalfDay(week.startHalfDay);
     week.activities.forEach(function (activity) {
       if (!activity || typeof activity !== 'object') {
         return;
@@ -1631,6 +1721,10 @@
     return sanitizeDateString(value);
   }
 
+  function normalizeHalfDay(value) {
+    return value === 'pm' ? 'pm' : 'am';
+  }
+
   function normalizeSlotId(slotId) {
     if (slotId && halfDaySlotMap[slotId]) {
       return slotId;
@@ -1638,7 +1732,16 @@
     if (slotId && legacySlotIdMap[slotId]) {
       return legacySlotIdMap[slotId];
     }
-    return halfDaySlots[0].id;
+    return defaultSlotId;
+  }
+
+  function getWeekStartSlotId(week) {
+    var normalizedHalfDay = normalizeHalfDay(week && week.startHalfDay);
+    var candidate = weekStartSlotByHalfDay[normalizedHalfDay];
+    if (candidate && halfDaySlotMap[candidate]) {
+      return candidate;
+    }
+    return defaultSlotId;
   }
 
   function countSlotActivitiesForWeek(weekId, slotId) {
