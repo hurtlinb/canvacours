@@ -632,15 +632,16 @@ const server = http.createServer((req, res) => {
               return;
             }
 
+            var operationSucceeded = false;
             if (activityId) {
-              updateActivity(activityId, selectedWeekId, payload);
+              operationSucceeded = updateActivity(activityId, selectedWeekId, payload);
             } else {
-              addActivity(selectedWeekId, payload);
+              operationSucceeded = addActivity(selectedWeekId, payload);
             }
 
-            saveData();
-            renderBoard();
-            closeForm();
+            if (operationSucceeded) {
+              closeForm();
+            }
           });
 
           function renderBoard() {
@@ -874,17 +875,17 @@ const server = http.createServer((req, res) => {
 
           function moveActivity(activityId, targetWeekId, targetIndex) {
             if (!activityId || !targetWeekId) {
-              return;
+              return false;
             }
             var sourceWeek = findWeekByActivityId(activityId);
             if (!sourceWeek) {
-              return;
+              return false;
             }
             var index = sourceWeek.activities.findIndex(function (item) {
               return item.id === activityId;
             });
             if (index === -1) {
-              return;
+              return false;
             }
             var movedActivity = sourceWeek.activities.splice(index, 1)[0];
             var targetWeek = courseData.find(function (week) {
@@ -892,7 +893,7 @@ const server = http.createServer((req, res) => {
             });
             if (!targetWeek) {
               sourceWeek.activities.splice(index, 0, movedActivity);
-              return;
+              return false;
             }
             if (typeof targetIndex === 'number') {
               if (targetWeek === sourceWeek && index < targetIndex) {
@@ -908,51 +909,70 @@ const server = http.createServer((req, res) => {
             } else {
               targetWeek.activities.push(movedActivity);
             }
-            saveData();
-            renderBoard();
+            persistState();
+            return true;
           }
 
           function addActivity(weekId, activity) {
+            if (!weekId) {
+              return false;
+            }
             var targetWeek = courseData.find(function (week) {
               return week.id === weekId;
             });
             if (!targetWeek) {
-              return;
+              return false;
             }
-            targetWeek.activities.push(activity);
+            var sanitizedActivity = sanitizeActivity(activity);
+            if (!sanitizedActivity) {
+              return false;
+            }
+            targetWeek.activities.push(sanitizedActivity);
+            persistState();
+            return true;
           }
 
           function updateActivity(activityId, newWeekId, updatedData) {
+            if (!activityId || !newWeekId) {
+              return false;
+            }
             var originWeek = findWeekByActivityId(activityId);
             if (!originWeek) {
-              return;
+              return false;
             }
             var activityIndex = originWeek.activities.findIndex(function (item) {
               return item.id === activityId;
             });
             if (activityIndex === -1) {
-              return;
+              return false;
             }
-            var updatedActivity = {
-              id: updatedData.id,
+            var sanitizedActivity = sanitizeActivity({
+              id: activityId,
               date: updatedData.date,
               type: updatedData.type,
               duration: updatedData.duration,
               description: updatedData.description
-            };
+            });
+            if (!sanitizedActivity) {
+              return false;
+            }
             if (originWeek.id === newWeekId) {
-              originWeek.activities[activityIndex] = updatedActivity;
-              return;
+              originWeek.activities[activityIndex] = sanitizedActivity;
+              persistState();
+              return true;
             }
             var destinationWeek = courseData.find(function (week) {
               return week.id === newWeekId;
             });
             if (!destinationWeek) {
-              originWeek.activities[activityIndex] = updatedActivity;
-              return;
+              originWeek.activities[activityIndex] = sanitizedActivity;
+              persistState();
+              return true;
             }
             originWeek.activities.splice(activityIndex, 1);
-            destinationWeek.activities.push(updatedActivity);
+            destinationWeek.activities.push(sanitizedActivity);
+            persistState();
+            return true;
           }
 
           function findWeekByActivityId(activityId) {
@@ -1070,6 +1090,11 @@ const server = http.createServer((req, res) => {
             } catch (error) {
               console.warn("Impossible d'enregistrer les données.", error);
             }
+          }
+
+          function persistState() {
+            saveData();
+            renderBoard();
           }
 
           function cloneWeeks(weeks) {
