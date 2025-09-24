@@ -82,6 +82,7 @@
   var modalCloseButtons = modal.querySelectorAll('[data-action="close-modal"]');
   var courseSelector = document.getElementById('course-selector');
   var newCourseButton = document.getElementById('new-course-button');
+  var renameCourseButton = document.getElementById('rename-course-button');
   var draggedActivityId = null;
   var coursesState = loadCoursesState();
   var courseData = getActiveCourseWeeks();
@@ -99,6 +100,12 @@
   if (newCourseButton) {
     newCourseButton.addEventListener('click', function () {
       createNewCourse();
+    });
+  }
+
+  if (renameCourseButton) {
+    renameCourseButton.addEventListener('click', function () {
+      renameActiveCourse();
     });
   }
 
@@ -956,6 +963,49 @@
     };
     coursesState.courses.push(newCourse);
     setActiveCourse(newCourse.id);
+  }
+
+  function renameActiveCourse() {
+    if (!coursesState || !Array.isArray(coursesState.courses)) {
+      return;
+    }
+    var activeCourse = getActiveCourse();
+    if (!activeCourse) {
+      return;
+    }
+    var currentName =
+      typeof activeCourse.name === 'string' && activeCourse.name.trim()
+        ? activeCourse.name.trim()
+        : generateDefaultCourseName(1);
+    var proposedName = window.prompt('Nom du cours', currentName);
+    if (typeof proposedName !== 'string') {
+      return;
+    }
+    var trimmed = proposedName.trim();
+    if (!trimmed) {
+      return;
+    }
+    var normalized = trimmed.toLowerCase();
+    var duplicate = coursesState.courses.some(function (course) {
+      if (!course || course.id === activeCourse.id) {
+        return false;
+      }
+      if (typeof course.name !== 'string') {
+        return false;
+      }
+      return course.name.trim().toLowerCase() === normalized;
+    });
+    if (duplicate) {
+      window.alert('Un cours avec ce nom existe déjà.');
+      return;
+    }
+    activeCourse.name = trimmed;
+    saveData();
+    updateCourseSelector();
+    if (courseSelector) {
+      courseSelector.value = activeCourse.id;
+      courseSelector.focus();
+    }
   }
 
   function loadCoursesState() {
