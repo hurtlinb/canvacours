@@ -103,7 +103,7 @@
   };
 
   var slotHelperDefaultText =
-    "La demi-journée est déterminée automatiquement en fonction du créneau depuis lequel vous ajoutez l'activité.";
+    "Les activités restent toujours dans la même demie-journée, c'est uniquement son nom qui change.";
 
   var board = document.getElementById('weeks-board');
   var modal = document.getElementById('activity-modal');
