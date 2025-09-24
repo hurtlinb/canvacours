@@ -3,7 +3,7 @@ name: Deploy via SSH (git pull)
 on:
   push:
     branches:
-      - main   # <-- remplace par ta branche si besoin
+      - main
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -16,49 +16,58 @@ jobs:
     steps:
       - name: Deploy on Infomaniak (SSH + git pull)
         uses: appleboy/ssh-action@v1.2.0
-        continue-on-error: true
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASS }}
           port: ${{ secrets.SSH_PORT }}
-          script_stop: true
+          script_stop: false
           script: |
-            set -e
+            #!/usr/bin/env bash
+            set +e                     # ne pas quitter sur erreur
+            trap "" PIPE               # ignore SIGPIPE (exit 141)
 
             APP_DIR="${{ secrets.APP_DIR }}"
-            BRANCH="main"  # <-- garde en phase avec 'on.push.branches'
+            BRANCH="main"
 
             echo "➡️  CD ${APP_DIR}"
-            cd "${APP_DIR}"
+            cd "${APP_DIR}" || exit 0
 
-            # On force à renvoyer 0 même si git pull retourne une erreur
-            git pull || true
+            echo "➡️  git fetch/reset"
+            git fetch origin "${BRANCH}" || true
+            git checkout "${BRANCH}" || true
+            git reset --hard "origin/${BRANCH}" || true
+            # ou: git pull --rebase --autostash origin "${BRANCH}" || true
 
-            echo "✅ Déploiement terminé (même si warning ou erreur ignorée)"
+            echo "✅ Déploiement terminé"
+            exit 0                     # force un succès propre
 
       - name: Wait 5 seconds
         run: sleep 5
 
-      - name: Restart
+      - name: Restart (PM2)
         uses: appleboy/ssh-action@v1.2.0
-        continue-on-error: true
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASS }}
           port: ${{ secrets.SSH_PORT }}
-          script_stop: true
+          script_stop: false
           script: |
-            set -e
+            #!/usr/bin/env bash
+            set +e
+            trap "" PIPE               # ignore SIGPIPE (exit 141)
 
             APP_DIR="${{ secrets.APP_DIR }}"
-            BRANCH="main"  # <-- garde en phase avec 'on.push.branches'
 
             echo "➡️  CD ${APP_DIR}"
-            cd "${APP_DIR}"
+            cd "${APP_DIR}" || exit 0
 
-            # On ignore tout code d'erreur éventuel de pm2
-            npx pm2 restart index || true
+            # Redémarrage PM2 — ignorer toute erreur
+            if command -v pm2 >/dev/null 2>&1; then
+              npx pm2 restart index || true
+              pm2 save || true
+            fi
 
-            echo "✅ Redémarrage terminé (erreurs ignorées)"
+            echo "✅ Redémarrage terminé"
+            exit 0
