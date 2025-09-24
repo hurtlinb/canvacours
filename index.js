@@ -199,6 +199,18 @@ const server = http.createServer((req, res) => {
           box-shadow: none;
         }
 
+        .activity-card.is-drop-target {
+          box-shadow: var(--shadow-sm);
+        }
+
+        .activity-card.is-drop-before {
+          box-shadow: inset 0 3px 0 var(--blue-500), var(--shadow-sm);
+        }
+
+        .activity-card.is-drop-after {
+          box-shadow: inset 0 -3px 0 var(--blue-500), var(--shadow-sm);
+        }
+
         .activity-card:hover {
           transform: translateY(-2px);
           box-shadow: 0 10px 24px rgba(47, 139, 255, 0.2);
@@ -754,6 +766,9 @@ const server = http.createServer((req, res) => {
 
             card.addEventListener('dragstart', handleDragStart);
             card.addEventListener('dragend', handleDragEnd);
+            card.addEventListener('dragover', handleCardDragOver);
+            card.addEventListener('dragleave', handleCardDragLeave);
+            card.addEventListener('drop', handleCardDrop);
 
             return card;
           }
@@ -793,6 +808,70 @@ const server = http.createServer((req, res) => {
             column.classList.remove('is-drop-target');
           }
 
+          function handleCardDragOver(event) {
+            event.preventDefault();
+            var card = event.currentTarget;
+            var bounding = card.getBoundingClientRect();
+            var offset = event.clientY - bounding.top;
+            var isBefore = offset < bounding.height / 2;
+            event.dataTransfer.dropEffect = 'move';
+            card.classList.add('is-drop-target');
+            card.classList.toggle('is-drop-before', isBefore);
+            card.classList.toggle('is-drop-after', !isBefore);
+          }
+
+          function handleCardDragLeave(event) {
+            var card = event.currentTarget;
+            if (event.relatedTarget && card.contains(event.relatedTarget)) {
+              return;
+            }
+            clearCardDropState(card);
+          }
+
+          function handleCardDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            var card = event.currentTarget;
+            var targetWeekId = card.getAttribute('data-week-id');
+            var targetActivityId = card.getAttribute('data-activity-id');
+            var activityId = draggedActivityId || event.dataTransfer.getData('text/plain');
+            var bounding = card.getBoundingClientRect();
+            var offset = event.clientY - bounding.top;
+            var isBefore = offset < bounding.height / 2;
+            clearCardDropState(card);
+            var relatedColumn = null;
+            if (targetWeekId) {
+              relatedColumn = board.querySelector('.week-column[data-week-id="' + targetWeekId + '"]');
+            }
+            if (relatedColumn) {
+              relatedColumn.classList.remove('is-drop-target');
+            }
+            if (!activityId || !targetWeekId || !targetActivityId) {
+              return;
+            }
+            var targetWeek = courseData.find(function (week) {
+              return week.id === targetWeekId;
+            });
+            if (!targetWeek) {
+              return;
+            }
+            var targetIndex = targetWeek.activities.findIndex(function (activity) {
+              return activity.id === targetActivityId;
+            });
+            if (targetIndex === -1) {
+              return;
+            }
+            if (!isBefore) {
+              targetIndex += 1;
+            }
+            moveActivity(activityId, targetWeekId, targetIndex);
+            draggedActivityId = null;
+          }
+
+          function clearCardDropState(card) {
+            card.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after');
+          }
+
           function handleDrop(event) {
             event.preventDefault();
             var column = event.currentTarget;
@@ -806,7 +885,7 @@ const server = http.createServer((req, res) => {
             draggedActivityId = null;
           }
 
-          function moveActivity(activityId, targetWeekId) {
+          function moveActivity(activityId, targetWeekId, targetIndex) {
             if (!activityId || !targetWeekId) {
               return;
             }
@@ -828,7 +907,20 @@ const server = http.createServer((req, res) => {
               sourceWeek.activities.splice(index, 0, movedActivity);
               return;
             }
-            targetWeek.activities.push(movedActivity);
+            if (typeof targetIndex === 'number') {
+              if (targetWeek === sourceWeek && index < targetIndex) {
+                targetIndex -= 1;
+              }
+              if (targetIndex < 0) {
+                targetIndex = 0;
+              }
+              if (targetIndex > targetWeek.activities.length) {
+                targetIndex = targetWeek.activities.length;
+              }
+              targetWeek.activities.splice(targetIndex, 0, movedActivity);
+            } else {
+              targetWeek.activities.push(movedActivity);
+            }
             saveData();
             renderBoard();
           }
