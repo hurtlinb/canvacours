@@ -79,6 +79,13 @@ const server = http.createServer((req, res) => {
           opacity: 0.85;
         }
 
+        .app-version {
+          margin-left: 0.35rem;
+          font-weight: 600;
+          letter-spacing: normal;
+          text-transform: none;
+        }
+
         .app-header h1 {
           margin: 0 0 0.5rem;
           font-size: 2.75rem;
@@ -94,25 +101,6 @@ const server = http.createServer((req, res) => {
           max-width: 1200px;
           margin: -3rem auto 4rem;
           padding: 0 1.5rem 4rem;
-        }
-
-        .board-intro {
-          background: var(--white);
-          border-radius: var(--radius-lg);
-          padding: 1.5rem;
-          box-shadow: var(--shadow-sm);
-          margin-bottom: 2rem;
-        }
-
-        .board-intro h2 {
-          margin-top: 0;
-          font-size: 1.25rem;
-          color: var(--grey-900);
-        }
-
-        .board-intro p {
-          margin-bottom: 0;
-          color: var(--grey-500);
         }
 
         .board {
@@ -474,7 +462,7 @@ const server = http.createServer((req, res) => {
       <header class="app-header">
         <div class="header-content">
           <div class="header-text">
-            <p class="app-kicker">Planification pédagogique</p>
+            <p class="app-kicker">Planification pédagogique <span class="app-version">v${version}</span></p>
             <h1>Canvas de cours</h1>
             <p class="app-subtitle">Organisez et ajustez les activités de vos 5 semaines de cours.</p>
           </div>
@@ -485,10 +473,6 @@ const server = http.createServer((req, res) => {
         </div>
       </header>
       <main class="page-content">
-        <section class="board-intro">
-          <h2>Vue d'ensemble</h2>
-          <p>Ajoutez, modifiez ou déplacez vos activités entre les semaines en glissant les cartes.</p>
-        </section>
         <section class="board" id="weeks-board" aria-live="polite"></section>
       </main>
       <footer class="app-footer">
