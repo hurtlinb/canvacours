@@ -866,7 +866,7 @@ const server = http.createServer((req, res) => {
             dateInput.type = 'date';
             dateInput.value = week.startDate || '';
             dateInput.addEventListener('change', function (event) {
-              var normalized = sanitizeDateString(event.target.value);
+              var normalized = normalizeWeekStartDate(event.target.value);
               week.startDate = normalized;
               event.target.value = normalized;
               refreshWeekActivitiesDates(week);
@@ -1485,7 +1485,7 @@ const server = http.createServer((req, res) => {
                 if (!savedWeek) {
                   return cloneWeek(defaultWeek);
                 }
-                var startDate = sanitizeDateString(savedWeek.startDate);
+                var startDate = normalizeWeekStartDate(savedWeek.startDate);
                 if (!startDate) {
                   startDate = deriveStartDateFromActivities(savedWeek.activities);
                 }
@@ -1587,7 +1587,7 @@ const server = http.createServer((req, res) => {
             return {
               id: week.id,
               name: week.name,
-              startDate: sanitizeDateString(week.startDate),
+              startDate: normalizeWeekStartDate(week.startDate),
               activities: []
             };
           }
@@ -1598,7 +1598,7 @@ const server = http.createServer((req, res) => {
             }
             var type = activity.type && typeLabels[activity.type] ? activity.type : 'presentation';
             var slotId = normalizeSlotId(activity.slot);
-            var normalizedWeekStart = sanitizeDateString(weekStartDate);
+            var normalizedWeekStart = normalizeWeekStartDate(weekStartDate);
             var sanitizedDate = '';
             if (normalizedWeekStart) {
               sanitizedDate = computeSlotDate(normalizedWeekStart, slotId);
@@ -1629,7 +1629,8 @@ const server = http.createServer((req, res) => {
             if (!week || !Array.isArray(week.activities)) {
               return;
             }
-            var normalizedStart = sanitizeDateString(week.startDate);
+            var normalizedStart = normalizeWeekStartDate(week.startDate);
+            week.startDate = normalizedStart;
             week.activities.forEach(function (activity) {
               if (!activity || typeof activity !== 'object') {
                 return;
@@ -1669,7 +1670,7 @@ const server = http.createServer((req, res) => {
           }
 
           function computeSlotDate(startDate, slotId) {
-            var normalizedStart = sanitizeDateString(startDate);
+            var normalizedStart = normalizeWeekStartDate(startDate);
             var slot = halfDaySlotMap[slotId];
             if (!normalizedStart || !slot) {
               return '';
@@ -1694,6 +1695,23 @@ const server = http.createServer((req, res) => {
             var date = new Date(shortValue + 'T00:00:00');
             if (isNaN(date.getTime())) {
               return '';
+            }
+            return date.toISOString().slice(0, 10);
+          }
+
+          function normalizeWeekStartDate(value) {
+            var sanitized = sanitizeDateString(value);
+            if (!sanitized) {
+              return '';
+            }
+            var date = new Date(sanitized + 'T00:00:00');
+            if (isNaN(date.getTime())) {
+              return '';
+            }
+            var day = date.getDay();
+            var diffToMonday = (day + 6) % 7;
+            if (diffToMonday !== 0) {
+              date.setDate(date.getDate() - diffToMonday);
             }
             return date.toISOString().slice(0, 10);
           }
@@ -1778,7 +1796,7 @@ const server = http.createServer((req, res) => {
               return '';
             }
             validDates.sort();
-            return validDates[0];
+            return normalizeWeekStartDate(validDates[0]);
           }
 
           function generateId() {
