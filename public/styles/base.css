@@ -1,0 +1,81 @@
+:root {
+  --blue-50: #f0f6ff;
+  --blue-100: #dcecff;
+  --blue-200: #bfdcff;
+  --blue-300: #8ec4ff;
+  --blue-400: #5aaaff;
+  --blue-500: #2f8bff;
+  --blue-600: #1c6fd6;
+  --grey-900: #1f2a36;
+  --grey-700: #2f3c4a;
+  --grey-500: #60718a;
+  --grey-200: #d6dce8;
+  --white: #ffffff;
+  --shadow-md: 0 12px 30px rgba(47, 139, 255, 0.15);
+  --shadow-sm: 0 6px 16px rgba(47, 139, 255, 0.1);
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+  background: var(--blue-50);
+  color: var(--grey-700);
+  line-height: 1.6;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+.app-header {
+  background: linear-gradient(135deg, var(--blue-400), var(--blue-600));
+  color: var(--white);
+  padding: 3.5rem 1.5rem 5rem;
+}
+
+.header-content {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.header-text {
+  max-width: 640px;
+}
+
+.app-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 2.75rem;
+}
+
+.app-subtitle {
+  margin: 0;
+  font-size: 1.1rem;
+  max-width: 460px;
+}
+
+.page-content {
+  max-width: 1200px;
+  margin: -3rem auto 4rem;
+  padding: 0 1.5rem 4rem;
+}
+
+.app-footer {
+  text-align: center;
+  color: var(--grey-500);
+  padding: 2rem 1.5rem 3rem;
+  font-size: 0.9rem;
+}
