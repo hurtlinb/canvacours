@@ -63,6 +63,8 @@
     return typeLabels[key] ? key : 'presentation';
   }
 
+  var HALF_DAY_SLOTS_PER_WEEK = 3;
+
   var halfDaySlots = [
     {
       id: 'monday-am',
@@ -93,8 +95,10 @@
   var defaultSlotId = halfDaySlots.length > 0 ? halfDaySlots[0].id : '';
 
   var halfDaySlotMap = {};
-  halfDaySlots.forEach(function (slot) {
+  var halfDaySlotIndexMap = {};
+  halfDaySlots.forEach(function (slot, index) {
     halfDaySlotMap[slot.id] = slot;
+    halfDaySlotIndexMap[slot.id] = index;
   });
 
   var legacySlotIdMap = {
@@ -350,7 +354,12 @@
           return;
         }
         var selectedValue = normalizeHalfDay(event.target.value);
+        if (selectedValue === week.startHalfDay) {
+          return;
+        }
+        var previousOrder = getActivitySlotOrderIndices(week.activities);
         week.startHalfDay = selectedValue;
+        remapWeekActivitiesForHalfDay(week, previousOrder);
         saveData();
         renderBoard();
         updateSlotHelper();
@@ -1333,13 +1342,15 @@
       var weekName =
         typeof savedWeek.name === 'string' && savedWeek.name.trim() ? savedWeek.name.trim() : defaultWeek.name;
       var startHalfDay = normalizeHalfDay(savedWeek.startHalfDay);
-      return {
+      var mergedWeek = {
         id: defaultWeek.id,
         name: weekName,
         startDate: startDate,
         startHalfDay: startHalfDay,
         activities: activities
       };
+      synchronizeWeekActivitiesWithStartHalfDay(mergedWeek);
+      return mergedWeek;
     });
   }
 
@@ -1500,7 +1511,7 @@
       }
     }
     if (allowedIds.length === 0) {
-      allowedIds = halfDaySlots.slice(0, 3).map(function (slot) {
+      allowedIds = halfDaySlots.slice(0, HALF_DAY_SLOTS_PER_WEEK).map(function (slot) {
         return slot.id;
       });
     }
@@ -1819,7 +1830,7 @@
       startIndex = 0;
     }
     var orderedSlots = [];
-    for (var i = 0; i < 3; i += 1) {
+    for (var i = 0; i < HALF_DAY_SLOTS_PER_WEEK; i += 1) {
       var index = startIndex + i;
       if (index >= halfDaySlots.length) {
         break;
@@ -1827,6 +1838,146 @@
       orderedSlots.push(halfDaySlots[index]);
     }
     return orderedSlots;
+  }
+
+  function getHalfDaySlotIndex(slotId) {
+    if (typeof slotId !== 'string' || !slotId) {
+      return -1;
+    }
+    var candidate = slotId;
+    if (!Object.prototype.hasOwnProperty.call(halfDaySlotIndexMap, candidate)) {
+      if (legacySlotIdMap[candidate]) {
+        candidate = legacySlotIdMap[candidate];
+      }
+    }
+    if (Object.prototype.hasOwnProperty.call(halfDaySlotIndexMap, candidate)) {
+      return halfDaySlotIndexMap[candidate];
+    }
+    return -1;
+  }
+
+  function getOrderedHalfDaySlotIndicesForHalfDay(halfDay) {
+    var normalizedHalfDay = normalizeHalfDay(halfDay);
+    var startSlotId = weekStartSlotByHalfDay[normalizedHalfDay];
+    var startIndex = getHalfDaySlotIndex(startSlotId);
+    if (startIndex === -1) {
+      startIndex = 0;
+    }
+    var indices = [];
+    for (var i = 0; i < HALF_DAY_SLOTS_PER_WEEK; i += 1) {
+      var index = startIndex + i;
+      if (index >= halfDaySlots.length) {
+        break;
+      }
+      indices.push(index);
+    }
+    if (indices.length === 0 && halfDaySlots.length > 0) {
+      indices.push(0);
+    }
+    return indices;
+  }
+
+  function getActivitySlotOrderIndices(activities) {
+    var indices = [];
+    var seen = {};
+    if (!Array.isArray(activities)) {
+      return indices;
+    }
+    activities.forEach(function (activity) {
+      if (!activity || typeof activity !== 'object') {
+        return;
+      }
+      var normalizedSlot = normalizeSlotId(activity.slot);
+      activity.slot = normalizedSlot;
+      var index = getHalfDaySlotIndex(normalizedSlot);
+      if (index === -1 || seen[index]) {
+        return;
+      }
+      seen[index] = true;
+      indices.push(index);
+    });
+    indices.sort(function (a, b) {
+      return a - b;
+    });
+    return indices;
+  }
+
+  function findInsertionIndex(sortedArray, value) {
+    if (!Array.isArray(sortedArray) || sortedArray.length === 0) {
+      return 0;
+    }
+    for (var i = 0; i < sortedArray.length; i += 1) {
+      if (value < sortedArray[i]) {
+        return i;
+      }
+    }
+    return sortedArray.length;
+  }
+
+  function remapActivitiesSlotOrder(activities, sourceOrder, targetOrder) {
+    if (!Array.isArray(activities) || activities.length === 0) {
+      return;
+    }
+    if (!Array.isArray(targetOrder) || targetOrder.length === 0) {
+      return;
+    }
+    var normalizedSource =
+      Array.isArray(sourceOrder) && sourceOrder.length > 0
+        ? sourceOrder.slice()
+        : getActivitySlotOrderIndices(activities);
+    if (normalizedSource.length === 0) {
+      normalizedSource.push(targetOrder[0]);
+    }
+    normalizedSource.sort(function (a, b) {
+      return a - b;
+    });
+    var inserted = {};
+    var lastTargetIndex = targetOrder.length - 1;
+    activities.forEach(function (activity) {
+      if (!activity || typeof activity !== 'object') {
+        return;
+      }
+      var normalizedSlot = normalizeSlotId(activity.slot);
+      activity.slot = normalizedSlot;
+      var slotIndex = getHalfDaySlotIndex(normalizedSlot);
+      if (slotIndex === -1) {
+        slotIndex = normalizedSource[0];
+      }
+      var relativePosition = normalizedSource.indexOf(slotIndex);
+      if (relativePosition === -1) {
+        relativePosition = findInsertionIndex(normalizedSource, slotIndex);
+        if (!inserted[slotIndex]) {
+          normalizedSource.splice(relativePosition, 0, slotIndex);
+          inserted[slotIndex] = true;
+        }
+      }
+      if (relativePosition < 0) {
+        relativePosition = 0;
+      }
+      if (relativePosition > lastTargetIndex) {
+        relativePosition = lastTargetIndex;
+      }
+      var mappedIndex = targetOrder[relativePosition] || targetOrder[lastTargetIndex];
+      var mappedSlot = halfDaySlots[mappedIndex];
+      activity.slot = mappedSlot ? mappedSlot.id : defaultSlotId;
+    });
+  }
+
+  function remapWeekActivitiesForHalfDay(week, sourceOrder) {
+    if (!week || !Array.isArray(week.activities)) {
+      return;
+    }
+    var targetOrder = getOrderedHalfDaySlotIndicesForHalfDay(week.startHalfDay);
+    remapActivitiesSlotOrder(week.activities, sourceOrder, targetOrder);
+    refreshWeekActivitiesDates(week);
+  }
+
+  function synchronizeWeekActivitiesWithStartHalfDay(week) {
+    if (!week || !Array.isArray(week.activities)) {
+      return;
+    }
+    var sourceOrder = getActivitySlotOrderIndices(week.activities);
+    remapWeekActivitiesForHalfDay(week, sourceOrder);
   }
 
   function countSlotActivitiesForWeek(weekId, slotId) {
