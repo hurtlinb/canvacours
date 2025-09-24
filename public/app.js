@@ -1037,10 +1037,19 @@
       return slot.label;
     }
     var formattedDay = capitalizeFirstLetter(dayName);
-    if (slot.timeLabel) {
-      return formattedDay + ' ' + slot.timeLabel;
+    var dateLabel = parsedDate.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    if (!dateLabel) {
+      return slot.label;
     }
-    return formattedDay;
+    var formattedDate = formattedDay + ' ' + dateLabel;
+    if (slot.timeLabel) {
+      return formattedDate + ' ' + slot.timeLabel;
+    }
+    return formattedDate;
   }
 
   function capitalizeFirstLetter(value) {
