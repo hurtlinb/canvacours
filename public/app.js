@@ -301,7 +301,7 @@
     datePicker.className = 'week-date-picker';
 
     var dateLabel = document.createElement('span');
-    dateLabel.textContent = 'Premier jour de cours';
+    dateLabel.textContent = 'Début du cours';
 
     var dateInput = document.createElement('input');
     dateInput.type = 'date';
@@ -319,8 +319,13 @@
     datePicker.appendChild(dateLabel);
     datePicker.appendChild(dateInput);
 
+    var scheduleRow = document.createElement('div');
+    scheduleRow.className = 'week-schedule-row';
+
+    scheduleRow.appendChild(datePicker);
+
     header.appendChild(titleRow);
-    header.appendChild(datePicker);
+    header.appendChild(scheduleRow);
 
     var startHalfDay = normalizeHalfDay(week.startHalfDay);
     week.startHalfDay = startHalfDay;
@@ -374,7 +379,7 @@
     });
 
     halfDayToggle.appendChild(halfDayOptions);
-    header.appendChild(halfDayToggle);
+    scheduleRow.appendChild(halfDayToggle);
 
     var slotsWrapper = document.createElement('div');
     slotsWrapper.className = 'week-slots';

@@ -52,11 +52,18 @@
   gap: 1rem;
 }
 
-.week-date-picker {
+.week-schedule-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  align-items: flex-start;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.week-date-picker {
+  display: inline-flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .week-date-picker span {
@@ -82,10 +89,10 @@
 }
 
 .week-halfday-toggle {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  align-items: flex-start;
+  display: inline-flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .week-halfday-toggle-label {
