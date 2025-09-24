@@ -4,6 +4,22 @@
     align-items: flex-start;
   }
 
+  .header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .course-selector-input {
+    width: 100%;
+  }
+
+  .header-new-course {
+    justify-content: center;
+    width: 100%;
+  }
+
   .app-header h1 {
     font-size: 2.25rem;
   }

@@ -1,7 +1,8 @@
 (function () {
   'use strict';
 
-  var storageKey = 'course-canvas-v1';
+  var storageKey = 'course-canvas-v2';
+  var legacyStorageKey = 'course-canvas-v1';
   var defaultWeeks = Array.from({ length: 5 }, function (_, index) {
     return {
       id: 'week-' + (index + 1),
@@ -79,11 +80,27 @@
   var descriptionInput = document.getElementById('description');
   var activityIdInput = document.getElementById('activity-id');
   var modalCloseButtons = modal.querySelectorAll('[data-action="close-modal"]');
+  var courseSelector = document.getElementById('course-selector');
+  var newCourseButton = document.getElementById('new-course-button');
   var draggedActivityId = null;
-  var courseData = loadData();
+  var coursesState = loadCoursesState();
+  var courseData = getActiveCourseWeeks();
 
+  updateCourseSelector();
   updateSlotHelper();
   renderBoard();
+
+  if (courseSelector) {
+    courseSelector.addEventListener('change', function (event) {
+      setActiveCourse(event.target.value);
+    });
+  }
+
+  if (newCourseButton) {
+    newCourseButton.addEventListener('click', function () {
+      createNewCourse();
+    });
+  }
 
   board.addEventListener('click', function (event) {
     var addTrigger = event.target.closest('[data-action="add-activity"]');
@@ -842,44 +859,275 @@
     clearSlotValue();
   }
 
-  function loadData() {
+  function updateCourseSelector() {
+    if (!courseSelector) {
+      return;
+    }
+    while (courseSelector.firstChild) {
+      courseSelector.removeChild(courseSelector.firstChild);
+    }
+    if (!coursesState || !Array.isArray(coursesState.courses)) {
+      return;
+    }
+    var activeCourse = getActiveCourse();
+    var activeId = activeCourse ? activeCourse.id : '';
+    coursesState.courses.forEach(function (course) {
+      if (!course || typeof course !== 'object') {
+        return;
+      }
+      var option = document.createElement('option');
+      option.value = course.id;
+      option.textContent = course.name || 'Cours';
+      courseSelector.appendChild(option);
+    });
+    if (activeId) {
+      courseSelector.value = activeId;
+    }
+  }
+
+  function getActiveCourse() {
+    if (!coursesState || !Array.isArray(coursesState.courses)) {
+      coursesState = createInitialCoursesState();
+    }
+    if (coursesState.courses.length === 0) {
+      var fallbackCourse = createCourseFromWeeks(generateDefaultCourseName(1), []);
+      coursesState.courses.push(fallbackCourse);
+      coursesState.activeCourseId = fallbackCourse.id;
+    }
+    var activeCourse = coursesState.courses.find(function (course) {
+      return course && course.id === coursesState.activeCourseId;
+    });
+    if (!activeCourse) {
+      activeCourse = coursesState.courses[0];
+      coursesState.activeCourseId = activeCourse.id;
+    }
+    if (!Array.isArray(activeCourse.weeks)) {
+      activeCourse.weeks = cloneWeeks(defaultWeeks);
+    }
+    return activeCourse;
+  }
+
+  function getActiveCourseWeeks() {
+    return getActiveCourse().weeks;
+  }
+
+  function setActiveCourse(courseId) {
+    if (!coursesState || !Array.isArray(coursesState.courses)) {
+      return;
+    }
+    var targetCourse = coursesState.courses.find(function (course) {
+      return course && course.id === courseId;
+    });
+    if (!targetCourse) {
+      return;
+    }
+    if (targetCourse.id === coursesState.activeCourseId) {
+      courseData = targetCourse.weeks;
+      renderBoard();
+      updateSlotHelper();
+      updateCourseSelector();
+      return;
+    }
+    coursesState.activeCourseId = targetCourse.id;
+    courseData = targetCourse.weeks;
+    if (modal && modal.classList.contains('is-open')) {
+      closeForm();
+    } else {
+      if (weekIdInput) {
+        weekIdInput.value = '';
+      }
+      clearSlotValue();
+    }
+    saveData();
+    renderBoard();
+    updateSlotHelper();
+    updateCourseSelector();
+  }
+
+  function createNewCourse() {
+    if (!coursesState || !Array.isArray(coursesState.courses)) {
+      coursesState = createInitialCoursesState();
+    }
+    var courseName = generateAvailableCourseName();
+    var newCourse = {
+      id: generateCourseId(),
+      name: courseName,
+      weeks: cloneWeeks(defaultWeeks)
+    };
+    coursesState.courses.push(newCourse);
+    setActiveCourse(newCourse.id);
+  }
+
+  function loadCoursesState() {
     try {
       var raw = localStorage.getItem(storageKey);
-      if (!raw) {
-        return cloneWeeks(defaultWeeks);
+      var parsed = safeParse(raw);
+      var normalized = normalizeCoursesState(parsed);
+      if (normalized) {
+        return normalized;
       }
-      var parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) {
-        return cloneWeeks(defaultWeeks);
-      }
-      return defaultWeeks.map(function (defaultWeek) {
-        var savedWeek = parsed.find(function (item) {
-          return item && item.id === defaultWeek.id;
-        });
-        if (!savedWeek) {
-          return cloneWeek(defaultWeek);
-        }
-        var startDate = normalizeWeekStartDate(savedWeek.startDate);
-        if (!startDate) {
-          startDate = deriveStartDateFromActivities(savedWeek.activities);
-        }
-        var activities = Array.isArray(savedWeek.activities)
-          ? savedWeek.activities
-              .map(function (activity) {
-                return sanitizeActivity(activity, startDate);
-              })
-              .filter(Boolean)
-          : [];
+      var legacyRaw = typeof legacyStorageKey === 'string' ? localStorage.getItem(legacyStorageKey) : null;
+      var legacyParsed = safeParse(legacyRaw);
+      if (Array.isArray(legacyParsed)) {
+        var migratedCourse = createCourseFromWeeks(generateDefaultCourseName(1), legacyParsed);
         return {
-          id: defaultWeek.id,
-          name: defaultWeek.name,
-          startDate: startDate,
-          activities: activities
+          activeCourseId: migratedCourse.id,
+          courses: [migratedCourse]
         };
-      });
+      }
     } catch (error) {
       console.warn('Impossible de charger les données sauvegardées.', error);
-      return cloneWeeks(defaultWeeks);
+    }
+    return createInitialCoursesState();
+  }
+
+  function createInitialCoursesState() {
+    var initialCourse = {
+      id: generateCourseId(),
+      name: generateDefaultCourseName(1),
+      weeks: cloneWeeks(defaultWeeks)
+    };
+    return {
+      activeCourseId: initialCourse.id,
+      courses: [initialCourse]
+    };
+  }
+
+  function createCourseFromWeeks(name, weeks) {
+    var courseName = typeof name === 'string' && name.trim() ? name.trim() : generateDefaultCourseName(1);
+    return {
+      id: generateCourseId(),
+      name: courseName,
+      weeks: mergeWeeks(weeks)
+    };
+  }
+
+  function normalizeCoursesState(rawState) {
+    if (!rawState) {
+      return null;
+    }
+    if (Array.isArray(rawState)) {
+      return normalizeCoursesState({ courses: rawState });
+    }
+    if (typeof rawState !== 'object') {
+      return null;
+    }
+    var usedIds = {};
+    var rawCourses = Array.isArray(rawState.courses) ? rawState.courses.slice() : [];
+    if (rawCourses.length === 0 && Array.isArray(rawState.weeks)) {
+      rawCourses.push({ weeks: rawState.weeks, name: rawState.name });
+    }
+    var normalizedCourses = rawCourses
+      .map(function (course, index) {
+        return normalizeCourse(course, index + 1, usedIds);
+      })
+      .filter(Boolean);
+    if (normalizedCourses.length === 0) {
+      return null;
+    }
+    var activeCourseId =
+      typeof rawState.activeCourseId === 'string' && usedIds[rawState.activeCourseId]
+        ? rawState.activeCourseId
+        : normalizedCourses[0].id;
+    return {
+      activeCourseId: activeCourseId,
+      courses: normalizedCourses
+    };
+  }
+
+  function normalizeCourse(rawCourse, index, usedIds) {
+    if (!rawCourse || typeof rawCourse !== 'object') {
+      return null;
+    }
+    var identifier =
+      typeof rawCourse.id === 'string' && rawCourse.id.trim() ? rawCourse.id.trim() : generateCourseId();
+    while (usedIds[identifier]) {
+      identifier = generateCourseId();
+    }
+    usedIds[identifier] = true;
+    var courseName =
+      typeof rawCourse.name === 'string' && rawCourse.name.trim()
+        ? rawCourse.name.trim()
+        : generateDefaultCourseName(index);
+    var weeksSource = [];
+    if (Array.isArray(rawCourse.weeks)) {
+      weeksSource = rawCourse.weeks;
+    } else if (Array.isArray(rawCourse.data)) {
+      weeksSource = rawCourse.data;
+    } else if (Array.isArray(rawCourse.courseData)) {
+      weeksSource = rawCourse.courseData;
+    }
+    return {
+      id: identifier,
+      name: courseName,
+      weeks: mergeWeeks(weeksSource)
+    };
+  }
+
+  function mergeWeeks(savedWeeks) {
+    var source = Array.isArray(savedWeeks) ? savedWeeks : [];
+    return defaultWeeks.map(function (defaultWeek) {
+      var savedWeek = source.find(function (item) {
+        return item && item.id === defaultWeek.id;
+      });
+      if (!savedWeek) {
+        return cloneWeek(defaultWeek);
+      }
+      var startDate = normalizeWeekStartDate(savedWeek.startDate);
+      if (!startDate) {
+        startDate = deriveStartDateFromActivities(savedWeek.activities);
+      }
+      var activities = Array.isArray(savedWeek.activities)
+        ? savedWeek.activities
+            .map(function (activity) {
+              return sanitizeActivity(activity, startDate);
+            })
+            .filter(Boolean)
+        : [];
+      var weekName =
+        typeof savedWeek.name === 'string' && savedWeek.name.trim() ? savedWeek.name.trim() : defaultWeek.name;
+      return {
+        id: defaultWeek.id,
+        name: weekName,
+        startDate: startDate,
+        activities: activities
+      };
+    });
+  }
+
+  function generateDefaultCourseName(index) {
+    var number = typeof index === 'number' && index > 0 ? Math.floor(index) : 1;
+    return 'Cours ' + number;
+  }
+
+  function generateAvailableCourseName() {
+    var usedNames = {};
+    if (coursesState && Array.isArray(coursesState.courses)) {
+      coursesState.courses.forEach(function (course) {
+        if (course && typeof course.name === 'string') {
+          usedNames[course.name.trim().toLowerCase()] = true;
+        }
+      });
+    }
+    var counter =
+      coursesState && Array.isArray(coursesState.courses) ? coursesState.courses.length + 1 : 1;
+    var candidate = generateDefaultCourseName(counter);
+    while (usedNames[candidate.toLowerCase()]) {
+      counter += 1;
+      candidate = generateDefaultCourseName(counter);
+    }
+    return candidate;
+  }
+
+  function safeParse(value) {
+    if (typeof value !== 'string' || !value) {
+      return null;
+    }
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      console.warn('Impossible de décoder les données sauvegardées.', error);
+      return null;
     }
   }
 
@@ -927,8 +1175,12 @@
 
   function saveData() {
     refreshAllActivitiesDates();
+    getActiveCourse();
     try {
-      localStorage.setItem(storageKey, JSON.stringify(courseData));
+      localStorage.setItem(storageKey, JSON.stringify(coursesState));
+      if (legacyStorageKey && legacyStorageKey !== storageKey) {
+        localStorage.removeItem(legacyStorageKey);
+      }
     } catch (error) {
       console.warn("Impossible d'enregistrer les données.", error);
     }
@@ -1189,6 +1441,10 @@
     }
     validDates.sort();
     return normalizeWeekStartDate(validDates[0]);
+  }
+
+  function generateCourseId() {
+    return 'course-' + Math.random().toString(36).slice(2, 6) + Date.now().toString(36);
   }
 
   function generateId() {
