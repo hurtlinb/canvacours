@@ -261,6 +261,14 @@ const server = http.createServer((req, res) => {
           font-size: 0.95rem;
         }
 
+        .activity-material {
+          margin: 0 0 0.75rem;
+          font-size: 0.85rem;
+          color: var(--grey-500);
+          font-weight: 600;
+          word-break: break-word;
+        }
+
         .activity-duration {
           margin: 0 0 1rem;
           font-size: 0.85rem;
@@ -514,6 +522,10 @@ const server = http.createServer((req, res) => {
               <input id="duration" name="duration" type="text" placeholder="Ex. 2h, 45 minutes" />
             </div>
             <div class="form-group">
+              <label for="material">Matériel</label>
+              <input id="material" name="material" type="text" placeholder="Ex. diaporama_introduction.pdf" />
+            </div>
+            <div class="form-group">
               <label for="description">Description</label>
               <textarea id="description" name="description" rows="4" placeholder="Décrivez le déroulement de l'activité" required></textarea>
             </div>
@@ -552,6 +564,7 @@ const server = http.createServer((req, res) => {
           var dateInput = document.getElementById('date');
           var typeSelect = document.getElementById('activity-type');
           var durationInput = document.getElementById('duration');
+          var materialInput = document.getElementById('material');
           var descriptionInput = document.getElementById('description');
           var activityIdInput = document.getElementById('activity-id');
           var modalCloseButtons = modal.querySelectorAll('[data-action="close-modal"]');
@@ -617,6 +630,7 @@ const server = http.createServer((req, res) => {
               date: formData.get('date'),
               type: formData.get('activityType'),
               duration: (formData.get('duration') || '').trim(),
+              material: (formData.get('material') || '').trim(),
               description: (formData.get('description') || '').trim()
             };
 
@@ -716,6 +730,12 @@ const server = http.createServer((req, res) => {
             description.className = 'activity-description';
             description.textContent = activity.description || 'Description à préciser.';
 
+            var material = document.createElement('p');
+            material.className = 'activity-material';
+            material.textContent = activity.material
+              ? 'Matériel : ' + activity.material
+              : 'Matériel : à préciser';
+
             var duration = document.createElement('p');
             duration.className = 'activity-duration';
             duration.textContent = activity.duration ? 'Temps prévu : ' + activity.duration : 'Temps prévu : à définir';
@@ -735,6 +755,7 @@ const server = http.createServer((req, res) => {
 
             card.appendChild(top);
             card.appendChild(description);
+            card.appendChild(material);
             card.appendChild(duration);
             card.appendChild(actions);
 
@@ -925,6 +946,7 @@ const server = http.createServer((req, res) => {
               date: updatedData.date,
               type: updatedData.type,
               duration: updatedData.duration,
+              material: updatedData.material,
               description: updatedData.description
             };
             if (originWeek.id === newWeekId) {
@@ -967,12 +989,14 @@ const server = http.createServer((req, res) => {
               dateInput.value = options.activity.date || '';
               typeSelect.value = options.activity.type && typeLabels[options.activity.type] ? options.activity.type : 'presentation';
               durationInput.value = options.activity.duration || '';
+              materialInput.value = options.activity.material || '';
               descriptionInput.value = options.activity.description || '';
             } else {
               formTitle.textContent = 'Ajouter une activité';
               activityIdInput.value = '';
               setSelectValue(weekSelect, options.weekId);
               typeSelect.value = 'presentation';
+              materialInput.value = '';
             }
             modal.classList.add('is-open');
             modal.setAttribute('aria-hidden', 'false');
@@ -1083,6 +1107,7 @@ const server = http.createServer((req, res) => {
               date: activity.date || '',
               type: type,
               duration: activity.duration || '',
+              material: typeof activity.material === 'string' ? activity.material.trim() : '',
               description: activity.description || ''
             };
           }
