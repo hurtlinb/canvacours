@@ -66,6 +66,10 @@
   var formTitle = document.getElementById('form-title');
   var weekIdInput = document.getElementById('week-id');
   var slotInput = document.getElementById('slot');
+  var weekSelector = document.getElementById('week-selector');
+  var slotTimeRadios = document.querySelectorAll(
+    '#slot-time-toggle input[name="slot-time"]'
+  );
   var slotHelper = document.getElementById('slot-helper');
   if (slotHelper) {
     if (slotHelper.textContent && slotHelper.textContent.trim()) {
@@ -88,7 +92,9 @@
   var courseData = getActiveCourseWeeks();
 
   updateCourseSelector();
+  populateWeekSelector(weekIdInput ? weekIdInput.value : '');
   updateSlotHelper();
+  updateSlotRadios(slotInput ? slotInput.value : '');
   renderBoard();
 
   if (courseSelector) {
@@ -108,6 +114,29 @@
       renameActiveCourse();
     });
   }
+
+  if (weekSelector) {
+    weekSelector.addEventListener('change', function (event) {
+      if (weekIdInput) {
+        weekIdInput.value = event.target.value;
+      }
+      updateSlotHelper();
+    });
+  }
+
+  Array.prototype.forEach.call(slotTimeRadios, function (radio) {
+    radio.addEventListener('change', function (event) {
+      if (!slotInput || !event.target.checked) {
+        return;
+      }
+      var newSlotId = getSlotIdForTime(slotInput.value, event.target.value);
+      if (!newSlotId) {
+        updateSlotRadios(slotInput.value);
+        return;
+      }
+      setSlotValue(newSlotId);
+    });
+  });
 
   board.addEventListener('click', function (event) {
     var addTrigger = event.target.closest('[data-action="add-activity"]');
@@ -788,7 +817,9 @@
         targetWeekId = owningWeek.id;
       }
     }
-    if (weekIdInput) {
+    if (weekSelector) {
+      populateWeekSelector(targetWeekId);
+    } else if (weekIdInput) {
       weekIdInput.value = targetWeekId;
     }
     if (mode === 'edit' && options.activity) {
@@ -840,9 +871,11 @@
       if (slotHelper) {
         slotHelper.textContent = slotHelperDefaultText;
       }
+      disableAllSlotRadios();
       return;
     }
     slotInput.value = '';
+    updateSlotRadios('');
     updateSlotHelper();
   }
 
@@ -854,16 +887,128 @@
       var trimmed = value.trim();
       if (trimmed && halfDaySlotMap[trimmed]) {
         slotInput.value = trimmed;
+        updateSlotRadios(trimmed);
         updateSlotHelper();
         return;
       }
       if (trimmed) {
-        slotInput.value = normalizeSlotId(trimmed);
+        var normalizedSlot = normalizeSlotId(trimmed);
+        slotInput.value = normalizedSlot;
+        updateSlotRadios(normalizedSlot);
         updateSlotHelper();
         return;
       }
     }
     clearSlotValue();
+  }
+
+  function disableAllSlotRadios() {
+    if (!slotTimeRadios || slotTimeRadios.length === 0) {
+      return;
+    }
+    Array.prototype.forEach.call(slotTimeRadios, function (radio) {
+      if (!radio) {
+        return;
+      }
+      radio.checked = false;
+      radio.disabled = true;
+    });
+  }
+
+  function updateSlotRadios(slotId) {
+    if (!slotTimeRadios || slotTimeRadios.length === 0) {
+      return;
+    }
+    if (!slotId || !halfDaySlotMap[slotId]) {
+      disableAllSlotRadios();
+      return;
+    }
+    var parts = parseSlotIdentifier(slotId);
+    if (!parts.base || !parts.time) {
+      disableAllSlotRadios();
+      return;
+    }
+    Array.prototype.forEach.call(slotTimeRadios, function (radio) {
+      if (!radio) {
+        return;
+      }
+      var candidateId = parts.base + '-' + radio.value;
+      var exists = Boolean(halfDaySlotMap[candidateId]);
+      radio.disabled = !exists;
+      radio.checked = exists && candidateId === slotId;
+    });
+  }
+
+  function parseSlotIdentifier(slotId) {
+    if (typeof slotId !== 'string' || !slotId) {
+      return { base: '', time: '' };
+    }
+    var segments = slotId.split('-');
+    if (segments.length < 2) {
+      return { base: '', time: '' };
+    }
+    var time = segments[segments.length - 1];
+    if (time !== 'am' && time !== 'pm') {
+      return { base: '', time: '' };
+    }
+    var base = segments.slice(0, segments.length - 1).join('-');
+    return { base: base, time: time };
+  }
+
+  function getSlotIdForTime(referenceSlotId, timeValue) {
+    if (typeof timeValue !== 'string' || !timeValue) {
+      return '';
+    }
+    if (!referenceSlotId || !halfDaySlotMap[referenceSlotId]) {
+      return '';
+    }
+    var parts = parseSlotIdentifier(referenceSlotId);
+    if (!parts.base || !parts.time) {
+      return '';
+    }
+    var candidateId = parts.base + '-' + timeValue;
+    if (halfDaySlotMap[candidateId]) {
+      return candidateId;
+    }
+    return '';
+  }
+
+  function populateWeekSelector(preferredWeekId) {
+    if (!weekSelector) {
+      return;
+    }
+    while (weekSelector.firstChild) {
+      weekSelector.removeChild(weekSelector.firstChild);
+    }
+    var selectedId =
+      typeof preferredWeekId === 'string' ? preferredWeekId.trim() : '';
+    var hasSelected = false;
+    if (Array.isArray(courseData)) {
+      courseData.forEach(function (week) {
+        if (!week || typeof week.id !== 'string') {
+          return;
+        }
+        var option = document.createElement('option');
+        option.value = week.id;
+        option.textContent = week.name || week.id;
+        if (selectedId && !hasSelected && week.id === selectedId) {
+          hasSelected = true;
+        }
+        weekSelector.appendChild(option);
+      });
+    }
+    if (selectedId && hasSelected) {
+      weekSelector.value = selectedId;
+    } else if (weekSelector.options.length > 0) {
+      weekSelector.value = weekSelector.options[0].value;
+      selectedId = weekSelector.value;
+    } else {
+      weekSelector.value = '';
+      selectedId = '';
+    }
+    if (weekIdInput) {
+      weekIdInput.value = selectedId;
+    }
   }
 
   function updateCourseSelector() {
@@ -930,6 +1075,7 @@
     }
     if (targetCourse.id === coursesState.activeCourseId) {
       courseData = targetCourse.weeks;
+      populateWeekSelector(weekIdInput ? weekIdInput.value : '');
       renderBoard();
       updateSlotHelper();
       updateCourseSelector();
@@ -937,6 +1083,7 @@
     }
     coursesState.activeCourseId = targetCourse.id;
     courseData = targetCourse.weeks;
+    populateWeekSelector(weekIdInput ? weekIdInput.value : '');
     if (modal && modal.classList.contains('is-open')) {
       closeForm();
     } else {
