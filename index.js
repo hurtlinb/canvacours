@@ -292,15 +292,16 @@ const server = http.createServer((req, res) => {
 
         .activity-top {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           gap: 0.75rem;
           margin-bottom: 0.5rem;
         }
 
         .activity-summary {
           display: flex;
-          flex-direction: column;
-          gap: 0.35rem;
+          flex-direction: row;
+          align-items: baseline;
+          gap: 0.5rem;
           flex: 1;
           min-width: 0;
         }
@@ -349,6 +350,8 @@ const server = http.createServer((req, res) => {
           font-size: 0.95rem;
           font-weight: 600;
           line-height: 1.4;
+          flex: 1 1 auto;
+          min-width: 0;
         }
 
         .activity-material {
@@ -364,6 +367,7 @@ const server = http.createServer((req, res) => {
           font-size: 0.85rem;
           color: var(--blue-600);
           font-weight: 600;
+          white-space: nowrap;
         }
 
         .activity-actions {
