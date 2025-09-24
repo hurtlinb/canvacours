@@ -47,9 +47,13 @@
 
 .week-title-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
+}
+
+.week-title-row .week-schedule-row {
+  margin-left: auto;
 }
 
 .week-schedule-row {

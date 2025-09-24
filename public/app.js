@@ -297,6 +297,9 @@
 
     titleRow.appendChild(title);
 
+    var scheduleRow = document.createElement('div');
+    scheduleRow.className = 'week-schedule-row';
+
     var datePicker = document.createElement('label');
     datePicker.className = 'week-date-picker';
 
@@ -318,14 +321,7 @@
 
     datePicker.appendChild(dateLabel);
     datePicker.appendChild(dateInput);
-
-    var scheduleRow = document.createElement('div');
-    scheduleRow.className = 'week-schedule-row';
-
     scheduleRow.appendChild(datePicker);
-
-    header.appendChild(titleRow);
-    header.appendChild(scheduleRow);
 
     var startHalfDay = normalizeHalfDay(week.startHalfDay);
     week.startHalfDay = startHalfDay;
@@ -333,16 +329,10 @@
     var halfDayToggle = document.createElement('div');
     halfDayToggle.className = 'week-halfday-toggle';
 
-    var halfDayLabel = document.createElement('span');
-    halfDayLabel.className = 'week-halfday-toggle-label';
-    halfDayLabel.textContent = 'Démarrage';
-    halfDayLabel.id = 'week-' + week.id + '-start-halfday-label';
-    halfDayToggle.appendChild(halfDayLabel);
-
     var halfDayOptions = document.createElement('div');
     halfDayOptions.className = 'week-halfday-toggle-options';
     halfDayOptions.setAttribute('role', 'radiogroup');
-    halfDayOptions.setAttribute('aria-labelledby', halfDayLabel.id);
+    halfDayOptions.setAttribute('aria-label', 'Demi-journée de démarrage');
 
     ['am', 'pm'].forEach(function (halfDayValue) {
       var optionLabel = document.createElement('label');
@@ -380,6 +370,9 @@
 
     halfDayToggle.appendChild(halfDayOptions);
     scheduleRow.appendChild(halfDayToggle);
+
+    titleRow.appendChild(scheduleRow);
+    header.appendChild(titleRow);
 
     var slotsWrapper = document.createElement('div');
     slotsWrapper.className = 'week-slots';
