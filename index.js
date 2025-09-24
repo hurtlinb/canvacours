@@ -292,10 +292,17 @@ const server = http.createServer((req, res) => {
 
         .activity-top {
           display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 0.5rem;
+          align-items: flex-start;
+          gap: 0.75rem;
           margin-bottom: 0.5rem;
+        }
+
+        .activity-summary {
+          display: flex;
+          flex-direction: column;
+          gap: 0.35rem;
+          flex: 1;
+          min-width: 0;
         }
 
         .badge {
@@ -336,20 +343,16 @@ const server = http.createServer((req, res) => {
           color: #123651;
         }
 
-        .activity-date {
-          font-size: 0.85rem;
-          font-weight: 600;
-          color: var(--blue-600);
-        }
-
         .activity-description {
-          margin: 0 0 0.5rem;
+          margin: 0;
           color: var(--grey-700);
           font-size: 0.95rem;
+          font-weight: 600;
+          line-height: 1.4;
         }
 
         .activity-material {
-          margin: 0 0 0.5rem;
+          margin: 0.5rem 0 0.25rem;
           font-size: 0.85rem;
           color: var(--grey-500);
           font-weight: 600;
@@ -357,9 +360,9 @@ const server = http.createServer((req, res) => {
         }
 
         .activity-duration {
-          margin: 0 0 0.5rem;
+          margin: 0;
           font-size: 0.85rem;
-          color: var(--grey-500);
+          color: var(--blue-600);
           font-weight: 600;
         }
 
@@ -962,26 +965,30 @@ const server = http.createServer((req, res) => {
             badge.setAttribute('aria-label', badgeLabel);
             badge.title = badgeLabel;
 
-            var dateLabel = document.createElement('span');
-            dateLabel.className = 'activity-date';
-            dateLabel.textContent = formatActivitySchedule(week, activity.slot);
-
-            top.appendChild(badge);
-            top.appendChild(dateLabel);
+            var summary = document.createElement('div');
+            summary.className = 'activity-summary';
 
             var description = document.createElement('p');
             description.className = 'activity-description';
             description.textContent = activity.description || 'Description à préciser.';
+
+            var duration = document.createElement('span');
+            duration.className = 'activity-duration';
+            duration.textContent = activity.duration
+              ? '⏱ ' + activity.duration
+              : '⏱ Temps à définir';
+
+            summary.appendChild(description);
+            summary.appendChild(duration);
+
+            top.appendChild(badge);
+            top.appendChild(summary);
 
             var material = document.createElement('p');
             material.className = 'activity-material';
             material.textContent = activity.material
               ? 'Matériel : ' + activity.material
               : 'Matériel : à préciser';
-
-            var duration = document.createElement('p');
-            duration.className = 'activity-duration';
-            duration.textContent = activity.duration ? 'Temps prévu : ' + activity.duration : 'Temps prévu : à définir';
 
             var actions = document.createElement('div');
             actions.className = 'activity-actions';
@@ -997,9 +1004,7 @@ const server = http.createServer((req, res) => {
             actions.appendChild(editButton);
 
             card.appendChild(top);
-            card.appendChild(description);
             card.appendChild(material);
-            card.appendChild(duration);
             card.appendChild(actions);
 
             card.addEventListener('dragstart', handleDragStart);
@@ -1574,17 +1579,6 @@ const server = http.createServer((req, res) => {
             var computedDate = computeSlotDate(week.startDate, slotId);
             var dateText = computedDate ? formatDate(computedDate) : 'Date à définir';
             return slot.dayLabel + ' · ' + dateText;
-          }
-
-          function formatActivitySchedule(week, slotId) {
-            var slot = halfDaySlotMap[slotId];
-            var label = slot ? slot.label : '';
-            var computedDate = computeSlotDate(week.startDate, slotId);
-            var dateText = computedDate ? formatDate(computedDate) : 'Date à définir';
-            if (!label) {
-              return dateText;
-            }
-            return label + ' · ' + dateText;
           }
 
           function computeSlotDate(startDate, slotId) {
