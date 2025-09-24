@@ -80,3 +80,20 @@
 .btn-secondary:active {
   transform: translateY(1px);
 }
+
+.header-icon-button {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.header-icon-button span[aria-hidden='true'] {
+  line-height: 1;
+}
