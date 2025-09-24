@@ -820,6 +820,7 @@ const server = http.createServer((req, res) => {
           }
 
           function createWeekColumn(week) {
+            refreshWeekActivitiesDates(week);
             var column = document.createElement('section');
             column.className = 'week-column';
             column.setAttribute('data-week-id', week.id);
@@ -857,6 +858,7 @@ const server = http.createServer((req, res) => {
               var normalized = sanitizeDateString(event.target.value);
               week.startDate = normalized;
               event.target.value = normalized;
+              refreshWeekActivitiesDates(week);
               saveData();
               renderBoard();
               updateSlotHelper();
@@ -1201,14 +1203,17 @@ const server = http.createServer((req, res) => {
               activityId
             );
             var normalizedTargetSlotId = normalizeSlotId(targetSlotId || sourceSlotId);
-            var sanitizedActivity = sanitizeActivity({
-              id: sourceActivity.id,
-              slot: normalizedTargetSlotId,
-              type: sourceActivity.type,
-              duration: sourceActivity.duration,
-              material: sourceActivity.material,
-              description: sourceActivity.description
-            });
+            var sanitizedActivity = sanitizeActivity(
+              {
+                id: sourceActivity.id,
+                slot: normalizedTargetSlotId,
+                type: sourceActivity.type,
+                duration: sourceActivity.duration,
+                material: sourceActivity.material,
+                description: sourceActivity.description
+              },
+              targetWeek.startDate
+            );
             if (!sanitizedActivity) {
               return false;
             }
@@ -1246,7 +1251,7 @@ const server = http.createServer((req, res) => {
             if (!targetWeek) {
               return false;
             }
-            var sanitizedActivity = sanitizeActivity(activity);
+            var sanitizedActivity = sanitizeActivity(activity, targetWeek.startDate);
             if (!sanitizedActivity) {
               return false;
             }
@@ -1304,7 +1309,10 @@ const server = http.createServer((req, res) => {
                   ? changes.description
                   : originalActivity.description
             };
-            var sanitizedActivity = sanitizeActivity(mergedActivity);
+            var sanitizedActivity = sanitizeActivity(
+              mergedActivity,
+              destinationWeek.startDate
+            );
             if (!sanitizedActivity) {
               return false;
             }
@@ -1433,7 +1441,11 @@ const server = http.createServer((req, res) => {
                   startDate = deriveStartDateFromActivities(savedWeek.activities);
                 }
                 var activities = Array.isArray(savedWeek.activities)
-                  ? savedWeek.activities.map(sanitizeActivity).filter(Boolean)
+                  ? savedWeek.activities
+                      .map(function (activity) {
+                        return sanitizeActivity(activity, startDate);
+                      })
+                      .filter(Boolean)
                   : [];
                 return {
                   id: defaultWeek.id,
@@ -1508,6 +1520,7 @@ const server = http.createServer((req, res) => {
           }
 
           function saveData() {
+            refreshAllActivitiesDates();
             try {
               localStorage.setItem(storageKey, JSON.stringify(courseData));
             } catch (error) {
@@ -1535,19 +1548,54 @@ const server = http.createServer((req, res) => {
             };
           }
 
-          function sanitizeActivity(activity) {
+          function sanitizeActivity(activity, weekStartDate) {
             if (!activity || typeof activity !== 'object') {
               return null;
             }
             var type = activity.type && typeLabels[activity.type] ? activity.type : 'presentation';
+            var slotId = normalizeSlotId(activity.slot);
+            var normalizedWeekStart = sanitizeDateString(weekStartDate);
+            var sanitizedDate = '';
+            if (normalizedWeekStart) {
+              sanitizedDate = computeSlotDate(normalizedWeekStart, slotId);
+            } else if (typeof activity.date === 'string') {
+              sanitizedDate = sanitizeDateString(activity.date);
+            }
             return {
               id: activity.id || generateId(),
-              slot: normalizeSlotId(activity.slot),
+              slot: slotId,
               type: type,
               duration: activity.duration || '',
               material: typeof activity.material === 'string' ? activity.material.trim() : '',
-              description: activity.description || ''
+              description: activity.description || '',
+              date: sanitizedDate
             };
+          }
+
+          function refreshAllActivitiesDates() {
+            if (!Array.isArray(courseData)) {
+              return;
+            }
+            courseData.forEach(function (week) {
+              refreshWeekActivitiesDates(week);
+            });
+          }
+
+          function refreshWeekActivitiesDates(week) {
+            if (!week || !Array.isArray(week.activities)) {
+              return;
+            }
+            var normalizedStart = sanitizeDateString(week.startDate);
+            week.activities.forEach(function (activity) {
+              if (!activity || typeof activity !== 'object') {
+                return;
+              }
+              var normalizedSlot = normalizeSlotId(activity.slot);
+              activity.slot = normalizedSlot;
+              activity.date = normalizedStart
+                ? computeSlotDate(normalizedStart, normalizedSlot)
+                : '';
+            });
           }
 
           function formatDate(value) {
