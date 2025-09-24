@@ -242,7 +242,8 @@
 
       var slotTitle = document.createElement('span');
       slotTitle.className = 'slot-title';
-      slotTitle.textContent = slot.label;
+      var slotTitleText = formatSlotDayLabel(week.startDate, slot);
+      slotTitle.textContent = slotTitleText || slot.label;
 
       slotInfo.appendChild(slotTitle);
 
@@ -912,18 +913,15 @@
       return;
     }
     var dayLabel = formatSlotDayLabel(week.startDate, slot);
-    var helperParts = [];
     if (dayLabel) {
-      helperParts.push(dayLabel);
+      slotHelper.textContent = dayLabel;
+      return;
     }
-    if (slot.label && slot.label !== dayLabel) {
-      helperParts.push(slot.label);
+    if (slot.label) {
+      slotHelper.textContent = slot.label;
+      return;
     }
-    var helperLabel = helperParts.join(' · ');
-    if (!helperLabel) {
-      helperLabel = slotHelperDefaultText;
-    }
-    slotHelper.textContent = helperLabel;
+    slotHelper.textContent = slotHelperDefaultText;
   }
 
   function saveData() {
