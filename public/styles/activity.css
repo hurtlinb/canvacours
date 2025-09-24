@@ -78,19 +78,40 @@
   color: #17507e;
 }
 
-.badge-exercice {
-  background: rgba(82, 168, 236, 0.25);
-  color: #184c72;
+.badge-groupe {
+  background: rgba(54, 136, 199, 0.25);
+  color: #123651;
+}
+
+.badge-demonstration {
+  background: rgba(255, 206, 160, 0.25);
+  color: #7a4310;
+}
+
+.badge-exercice,
+.badge-exercice-individuel {
+  background: rgba(156, 224, 178, 0.25);
+  color: #1f5f36;
+}
+
+.badge-recherche {
+  background: rgba(152, 196, 255, 0.25);
+  color: #1b4670;
+}
+
+.badge-jeu {
+  background: rgba(255, 212, 153, 0.25);
+  color: #7a4d0b;
+}
+
+.badge-synthese {
+  background: rgba(204, 186, 255, 0.25);
+  color: #4a2f87;
 }
 
 .badge-evaluation {
   background: rgba(66, 150, 214, 0.25);
   color: #153f61;
-}
-
-.badge-groupe {
-  background: rgba(54, 136, 199, 0.25);
-  color: #123651;
 }
 
 .activity-description {
