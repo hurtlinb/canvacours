@@ -1069,6 +1069,22 @@
     return value.charAt(0).toUpperCase() + value.slice(1);
   }
 
+  function formatDateForInput(date) {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+      return '';
+    }
+    var year = date.getFullYear();
+    var month = String(date.getMonth() + 1);
+    if (month.length < 2) {
+      month = '0' + month;
+    }
+    var day = String(date.getDate());
+    if (day.length < 2) {
+      day = '0' + day;
+    }
+    return year + '-' + month + '-' + day;
+  }
+
   function computeSlotDate(startDate, slotId) {
     var normalizedStart = normalizeWeekStartDate(startDate);
     var slot = halfDaySlotMap[slotId];
@@ -1080,7 +1096,7 @@
       return '';
     }
     baseDate.setDate(baseDate.getDate() + (slot.dayOffset || 0));
-    return baseDate.toISOString().slice(0, 10);
+    return formatDateForInput(baseDate);
   }
 
   function sanitizeDateString(value) {
@@ -1091,12 +1107,16 @@
     if (!trimmed) {
       return '';
     }
-    var shortValue = trimmed.slice(0, 10);
-    var date = new Date(shortValue + 'T00:00:00');
+    var match = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (!match) {
+      return '';
+    }
+    var candidate = match[1];
+    var date = new Date(candidate + 'T00:00:00');
     if (isNaN(date.getTime())) {
       return '';
     }
-    return date.toISOString().slice(0, 10);
+    return formatDateForInput(date);
   }
 
   function normalizeWeekStartDate(value) {
