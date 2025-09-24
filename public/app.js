@@ -1681,11 +1681,15 @@
       return;
     }
     var previousStart = normalizeWeekStartDate(courseData[startIndex].startDate);
+    var previousHalfDay = normalizeHalfDay(courseData[startIndex].startHalfDay);
     for (var index = startIndex + 1; index < courseData.length; index += 1) {
       var targetWeek = courseData[index];
       if (!targetWeek || typeof targetWeek !== 'object') {
         continue;
       }
+      var currentHalfDay = normalizeHalfDay(targetWeek.startHalfDay);
+      var halfDayChanged = currentHalfDay !== previousHalfDay;
+      targetWeek.startHalfDay = previousHalfDay;
       if (previousStart) {
         var previousDate = new Date(previousStart + 'T00:00:00');
         if (isNaN(previousDate.getTime())) {
@@ -1701,7 +1705,12 @@
         targetWeek.startDate = '';
         previousStart = '';
       }
-      refreshWeekActivitiesDates(targetWeek);
+      if (halfDayChanged) {
+        synchronizeWeekActivitiesWithStartHalfDay(targetWeek);
+      } else {
+        refreshWeekActivitiesDates(targetWeek);
+      }
+      previousHalfDay = normalizeHalfDay(targetWeek.startHalfDay);
     }
   }
 
