@@ -11,6 +11,70 @@
   margin-bottom: 1rem;
 }
 
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-group-inline {
+  flex: 1 1 180px;
+}
+
+.form-group-inline select {
+  width: 100%;
+}
+
+.form-group-slot {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(47, 139, 255, 0.35);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  min-width: 220px;
+  gap: 0.5rem;
+}
+
+.form-group-slot legend {
+  font-weight: 600;
+  color: var(--grey-700);
+  padding: 0 0.35rem;
+}
+
+.slot-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.slot-radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(47, 139, 255, 0.25);
+  background: rgba(247, 251, 255, 0.7);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.slot-radio-option:hover {
+  border-color: rgba(47, 139, 255, 0.55);
+  background: rgba(233, 243, 255, 0.9);
+}
+
+.slot-radio-option input[type='radio'] {
+  accent-color: var(--blue-500);
+}
+
+.slot-radio-option span {
+  font-size: 0.95rem;
+  color: var(--grey-700);
+  font-weight: 500;
+}
+
 .form-group label {
   font-weight: 600;
   color: var(--grey-700);
