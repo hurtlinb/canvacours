@@ -403,7 +403,12 @@
       var slotTitle = document.createElement('span');
       slotTitle.className = 'slot-title';
       var slotTitleText = formatSlotDayLabel(week.startDate, slot);
-      slotTitle.textContent = slotTitleText || slot.label;
+      var slotDateText = formatSlotDateLabel(week.startDate, slot);
+      var slotDisplayText = slotTitleText || slot.label;
+      if (slotDateText) {
+        slotDisplayText += ' – ' + slotDateText;
+      }
+      slotTitle.textContent = slotDisplayText;
 
       slotInfo.appendChild(slotTitle);
 
@@ -1770,6 +1775,25 @@
       return formattedDay + ' ' + slot.timeLabel;
     }
     return formattedDay;
+  }
+
+  function formatSlotDateLabel(weekStartDate, slot) {
+    if (!slot) {
+      return '';
+    }
+    var slotDate = computeSlotDate(weekStartDate, slot.id);
+    if (!slotDate) {
+      return '';
+    }
+    var parsedDate = new Date(slotDate + 'T00:00:00');
+    if (isNaN(parsedDate.getTime())) {
+      return '';
+    }
+    return parsedDate.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
   }
 
   function capitalizeFirstLetter(value) {
