@@ -84,27 +84,31 @@ body.modal-open {
 .course-selector-input {
   appearance: none;
   -webkit-appearance: none;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: var(--white);
+  border: 1px solid rgba(47, 139, 255, 0.3);
   border-radius: 999px;
-  color: var(--white);
+  color: var(--blue-600);
   padding: 0.6rem 2.4rem 0.6rem 0.9rem;
   font-weight: 600;
   font-size: 0.95rem;
   min-width: 12rem;
-  box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(4px);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23ffffff' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  box-shadow: 0 10px 20px rgba(47, 139, 255, 0.15);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%231c6fd6' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.85rem center;
   background-size: 0.65rem;
   cursor: pointer;
 }
 
+.course-selector-input option {
+  color: var(--blue-600);
+  background: var(--white);
+}
+
 .course-selector-input:focus {
   outline: none;
-  border-color: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 3px rgba(47, 139, 255, 0.2);
 }
 
 .header-new-course {
