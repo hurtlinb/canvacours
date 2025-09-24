@@ -109,6 +109,7 @@
   var courseSelector = document.getElementById('course-selector');
   var newCourseButton = document.getElementById('new-course-button');
   var renameCourseButton = document.getElementById('rename-course-button');
+  var deleteCourseButton = document.getElementById('delete-course-button');
   var draggedActivityId = null;
   var coursesState = loadCoursesState();
   var courseData = getActiveCourseWeeks();
@@ -132,6 +133,12 @@
   if (renameCourseButton) {
     renameCourseButton.addEventListener('click', function () {
       renameActiveCourse();
+    });
+  }
+
+  if (deleteCourseButton) {
+    deleteCourseButton.addEventListener('click', function () {
+      deleteActiveCourse();
     });
   }
 
@@ -986,6 +993,59 @@
     };
     coursesState.courses.push(newCourse);
     setActiveCourse(newCourse.id);
+  }
+
+  function deleteActiveCourse() {
+    if (!coursesState || !Array.isArray(coursesState.courses)) {
+      return false;
+    }
+    if (coursesState.courses.length === 0) {
+      return false;
+    }
+    var activeCourse = getActiveCourse();
+    if (!activeCourse) {
+      return false;
+    }
+    var confirmed = window.confirm(
+      'Voulez-vous supprimer ce cours ? Toutes les activités associées seront définitivement perdues.'
+    );
+    if (!confirmed) {
+      return false;
+    }
+    var courseIndex = coursesState.courses.findIndex(function (course) {
+      return course && course.id === activeCourse.id;
+    });
+    if (courseIndex === -1) {
+      return false;
+    }
+    coursesState.courses.splice(courseIndex, 1);
+    var nextCourseId = null;
+    if (coursesState.courses.length === 0) {
+      var resetState = createInitialCoursesState();
+      nextCourseId = resetState.activeCourseId;
+      coursesState = resetState;
+      coursesState.activeCourseId = '';
+    } else {
+      var nextIndex = courseIndex;
+      if (nextIndex >= coursesState.courses.length) {
+        nextIndex = coursesState.courses.length - 1;
+      }
+      var nextCourse = coursesState.courses[nextIndex];
+      nextCourseId = nextCourse ? nextCourse.id : null;
+    }
+    if (typeof nextCourseId === 'string' && nextCourseId) {
+      setActiveCourse(nextCourseId);
+    } else {
+      courseData = getActiveCourseWeeks();
+      saveData();
+      renderBoard();
+      updateSlotHelper();
+      updateCourseSelector();
+    }
+    if (courseSelector) {
+      courseSelector.focus();
+    }
+    return true;
   }
 
   function renameActiveCourse() {

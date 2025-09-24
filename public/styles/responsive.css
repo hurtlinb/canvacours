@@ -16,7 +16,8 @@
   }
 
   .header-new-course,
-  .header-rename-course {
+  .header-rename-course,
+  .header-delete-course {
     justify-content: center;
     width: 100%;
   }

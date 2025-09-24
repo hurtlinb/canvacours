@@ -112,7 +112,8 @@ body.modal-open {
 }
 
 .header-new-course,
-.header-rename-course {
+.header-rename-course,
+.header-delete-course {
   white-space: nowrap;
 }
 
