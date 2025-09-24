@@ -485,7 +485,6 @@ const server = http.createServer((req, res) => {
           <div class="header-text">
             <p class="app-kicker">Planification pédagogique <span class="app-version">v${version}</span></p>
             <h1>Canvas de cours</h1>
-            <p class="app-subtitle">Organisez et ajustez les activités de vos 5 semaines de cours.</p>
           </div>
         </div>
       </header>
