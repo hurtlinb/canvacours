@@ -758,15 +758,16 @@ const server = http.createServer((req, res) => {
               return;
             }
 
+            var operationSucceeded = false;
             if (activityId) {
-              updateActivity(activityId, selectedWeekId, payload);
+              operationSucceeded = updateActivity(activityId, selectedWeekId, payload);
             } else {
-              addActivity(selectedWeekId, payload);
+              operationSucceeded = addActivity(selectedWeekId, payload);
             }
 
-            saveData();
-            renderBoard();
-            closeForm();
+            if (operationSucceeded) {
+              closeForm();
+            }
           });
 
           function renderBoard() {
@@ -1136,17 +1137,16 @@ const server = http.createServer((req, res) => {
 
           function moveActivity(activityId, targetWeekId, targetSlotId, targetSlotIndex) {
             if (!activityId || !targetWeekId) {
-              return;
+              return false;
             }
             var sourceWeek = findWeekByActivityId(activityId);
             if (!sourceWeek) {
-              return;
+              return false;
             }
             var activityIndex = sourceWeek.activities.findIndex(function (item) {
               return item.id === activityId;
             });
-            if (activityIndex === -1) {
-              return;
+
             }
             var sourceActivity = sourceWeek.activities[activityIndex];
             var sourceSlotId = normalizeSlotId(sourceActivity.slot);
@@ -1160,89 +1160,54 @@ const server = http.createServer((req, res) => {
               return week.id === targetWeekId;
             });
             if (!targetWeek) {
-              sourceWeek.activities.splice(activityIndex, 0, movedActivity);
-              return;
+
             }
             var normalizedTargetSlotId = normalizeSlotId(targetSlotId || movedActivity.slot);
             if (typeof targetSlotIndex !== 'number' || targetSlotIndex < 0) {
               targetSlotIndex = countSlotActivities(targetWeek.activities, normalizedTargetSlotId);
             }
-            if (
-              sourceWeek === targetWeek &&
-              sourceSlotId === normalizedTargetSlotId &&
-              sourceSlotIndex > -1 &&
-              sourceSlotIndex < targetSlotIndex
-            ) {
-              targetSlotIndex -= 1;
-            }
-            if (targetSlotIndex < 0) {
-              targetSlotIndex = 0;
-            }
-            var maxIndex = countSlotActivities(targetWeek.activities, normalizedTargetSlotId);
-            if (targetSlotIndex > maxIndex) {
-              targetSlotIndex = maxIndex;
-            }
-            insertActivityInSlot(
-              targetWeek.activities,
-              movedActivity,
-              normalizedTargetSlotId,
-              targetSlotIndex
-            );
-            saveData();
-            renderBoard();
+
           }
 
           function addActivity(weekId, activity) {
+            if (!weekId) {
+              return false;
+            }
             var targetWeek = courseData.find(function (week) {
               return week.id === weekId;
             });
             if (!targetWeek) {
-              return;
+              return false;
             }
-            var normalizedSlotId = normalizeSlotId(activity.slot);
-            var newActivity = {
-              id: activity.id || generateId(),
-              slot: normalizedSlotId,
-              type: activity.type && typeLabels[activity.type] ? activity.type : 'presentation',
-              duration: activity.duration || '',
-              description: activity.description || ''
-            };
-            insertActivityInSlot(targetWeek.activities, newActivity, normalizedSlotId);
+            var sanitizedActivity = sanitizeActivity(activity);
+            if (!sanitizedActivity) {
+              return false;
+            }
+
           }
 
           function updateActivity(activityId, newWeekId, updatedData) {
+            if (!activityId || !newWeekId) {
+              return false;
+            }
             var originWeek = findWeekByActivityId(activityId);
             if (!originWeek) {
-              return;
+              return false;
             }
             var activityIndex = originWeek.activities.findIndex(function (item) {
               return item.id === activityId;
             });
             if (activityIndex === -1) {
-              return;
+              return false;
             }
-            var sanitizedType =
-              updatedData.type && typeLabels[updatedData.type] ? updatedData.type : 'presentation';
-            var sanitizedActivity = {
-              id: updatedData.id,
 
-            };
-            if (
-              originWeek.id === newWeekId &&
-              originWeek.activities[activityIndex].slot === sanitizedActivity.slot
-            ) {
-              originWeek.activities[activityIndex] = sanitizedActivity;
-              return;
             }
             var destinationWeek = courseData.find(function (week) {
               return week.id === newWeekId;
             });
             if (!destinationWeek) {
               originWeek.activities[activityIndex] = sanitizedActivity;
-              return;
-            }
-            originWeek.activities.splice(activityIndex, 1);
-            insertActivityInSlot(destinationWeek.activities, sanitizedActivity, sanitizedActivity.slot);
+
           }
 
           function findWeekByActivityId(activityId) {
@@ -1423,6 +1388,11 @@ const server = http.createServer((req, res) => {
             } catch (error) {
               console.warn("Impossible d'enregistrer les données.", error);
             }
+          }
+
+          function persistState() {
+            saveData();
+            renderBoard();
           }
 
           function cloneWeeks(weeks) {
