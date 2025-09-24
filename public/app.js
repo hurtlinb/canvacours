@@ -204,7 +204,7 @@
     datePicker.className = 'week-date-picker';
 
     var dateLabel = document.createElement('span');
-    dateLabel.textContent = 'Date de début';
+    dateLabel.textContent = 'Premier jour de cours';
 
     var dateInput = document.createElement('input');
     dateInput.type = 'date';
