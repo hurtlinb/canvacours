@@ -693,19 +693,19 @@ const server = http.createServer((req, res) => {
             {
               id: 'monday-am',
               label: 'Demi-journée 1',
-              dayLabel: 'Lundi matin',
+              timeLabel: 'matin',
               dayOffset: 0
             },
             {
               id: 'monday-pm',
               label: 'Demi-journée 2',
-              dayLabel: 'Lundi après-midi',
+              timeLabel: 'après-midi',
               dayOffset: 0
             },
             {
               id: 'tuesday-am',
               label: 'Demi-journée 3',
-              dayLabel: 'Mardi matin',
+              timeLabel: 'matin',
               dayOffset: 1
             }
           ];
@@ -1535,7 +1535,14 @@ const server = http.createServer((req, res) => {
             }
             var computedDate = computeSlotDate(week.startDate, selectedSlotId);
             var dateText = computedDate ? formatDate(computedDate) : 'Date à définir';
-            slotHelper.textContent = slot.dayLabel + ' · ' + slot.label + ' — ' + dateText;
+            var dayLabel = formatSlotDayLabel(week.startDate, slot);
+            var helperLabel = slot.label;
+            if (dayLabel && dayLabel !== slot.label) {
+              helperLabel = dayLabel + ' · ' + slot.label;
+            } else if (dayLabel) {
+              helperLabel = dayLabel;
+            }
+            slotHelper.textContent = helperLabel + ' — ' + dateText;
           }
 
           function saveData() {
@@ -1641,7 +1648,39 @@ const server = http.createServer((req, res) => {
             }
             var computedDate = computeSlotDate(week.startDate, slotId);
             var dateText = computedDate ? formatDate(computedDate) : 'Date à définir';
-            return slot.dayLabel + ' · ' + dateText;
+            var dayLabel = formatSlotDayLabel(week.startDate, slot);
+            var baseLabel = dayLabel && dayLabel !== slot.label ? dayLabel : slot.label;
+            return baseLabel + ' · ' + dateText;
+          }
+
+          function formatSlotDayLabel(weekStartDate, slot) {
+            if (!slot) {
+              return '';
+            }
+            var slotDate = computeSlotDate(weekStartDate, slot.id);
+            if (!slotDate) {
+              return slot.label;
+            }
+            var parsedDate = new Date(slotDate + 'T00:00:00');
+            if (isNaN(parsedDate.getTime())) {
+              return slot.label;
+            }
+            var dayName = parsedDate.toLocaleDateString('fr-FR', { weekday: 'long' });
+            if (!dayName) {
+              return slot.label;
+            }
+            var formattedDay = capitalizeFirstLetter(dayName);
+            if (slot.timeLabel) {
+              return formattedDay + ' ' + slot.timeLabel;
+            }
+            return formattedDay;
+          }
+
+          function capitalizeFirstLetter(value) {
+            if (typeof value !== 'string' || value.length === 0) {
+              return '';
+            }
+            return value.charAt(0).toUpperCase() + value.slice(1);
           }
 
           function computeSlotDate(startDate, slotId) {
@@ -1675,20 +1714,7 @@ const server = http.createServer((req, res) => {
           }
 
           function normalizeWeekStartDate(value) {
-            var sanitized = sanitizeDateString(value);
-            if (!sanitized) {
-              return '';
-            }
-            var date = new Date(sanitized + 'T00:00:00');
-            if (isNaN(date.getTime())) {
-              return '';
-            }
-            var day = date.getDay();
-            var diffToMonday = (day + 6) % 7;
-            if (diffToMonday !== 0) {
-              date.setDate(date.getDate() - diffToMonday);
-            }
-            return date.toISOString().slice(0, 10);
+            return sanitizeDateString(value);
           }
 
           function normalizeSlotId(slotId) {
