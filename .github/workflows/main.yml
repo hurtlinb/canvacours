@@ -28,8 +28,6 @@ jobs:
 
             APP_DIR="${{ secrets.APP_DIR }}"
             BRANCH="main"  # <-- garde en phase avec 'on.push.branches'
-            NODE_ENV_VAL="${{ secrets.NODE_ENV || 'production' }}"
-            PM2_APP="${{ secrets.PM2_APP }}"
 
             echo "➡️  CD ${APP_DIR}"
             cd "${APP_DIR}"
