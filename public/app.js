@@ -28,19 +28,19 @@
   var halfDaySlots = [
     {
       id: 'monday-am',
-      label: 'Demi-journée 1',
+      label: 'Lundi matin',
       timeLabel: 'matin',
       dayOffset: 0
     },
     {
       id: 'monday-pm',
-      label: 'Demi-journée 2',
+      label: 'Lundi après-midi',
       timeLabel: 'après-midi',
       dayOffset: 0
     },
     {
       id: 'tuesday-am',
-      label: 'Demi-journée 3',
+      label: 'Mardi matin',
       timeLabel: 'matin',
       dayOffset: 1
     }
