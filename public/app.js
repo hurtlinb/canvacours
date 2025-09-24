@@ -92,6 +92,9 @@
   var formTitle = document.getElementById('form-title');
   var weekIdInput = document.getElementById('week-id');
   var slotInput = document.getElementById('slot');
+  var weekSelect = document.getElementById('week-select');
+  var slotRadioGroup = document.getElementById('slot-radio-group');
+  var slotRadioInputs = [];
   var slotHelper = document.getElementById('slot-helper');
   if (slotHelper) {
     if (slotHelper.textContent && slotHelper.textContent.trim()) {
@@ -100,6 +103,7 @@
       slotHelper.textContent = slotHelperDefaultText;
     }
   }
+  initializeSlotRadios();
   var typeSelect = document.getElementById('activity-type');
   var durationInput = document.getElementById('duration');
   var materialInput = document.getElementById('material');
@@ -115,7 +119,6 @@
   var courseData = getActiveCourseWeeks();
 
   updateCourseSelector();
-  updateSlotHelper();
   renderBoard();
 
   if (courseSelector) {
@@ -139,6 +142,15 @@
   if (deleteCourseButton) {
     deleteCourseButton.addEventListener('click', function () {
       deleteActiveCourse();
+    });
+  }
+
+  if (weekSelect) {
+    weekSelect.addEventListener('change', function (event) {
+      if (weekIdInput) {
+        weekIdInput.value = typeof event.target.value === 'string' ? event.target.value : '';
+      }
+      updateSlotHelper();
     });
   }
 
@@ -237,6 +249,13 @@
       var column = createWeekColumn(week);
       board.appendChild(column);
     });
+    var desiredWeekId = '';
+    if (weekIdInput && weekIdInput.value) {
+      desiredWeekId = weekIdInput.value;
+    } else if (weekSelect && weekSelect.value) {
+      desiredWeekId = weekSelect.value;
+    }
+    applyWeekSelection(desiredWeekId);
     updateSlotHelper();
   }
 
@@ -821,8 +840,9 @@
         targetWeekId = owningWeek.id;
       }
     }
+    var appliedWeekId = applyWeekSelection(targetWeekId);
     if (weekIdInput) {
-      weekIdInput.value = targetWeekId;
+      weekIdInput.value = appliedWeekId;
     }
     if (mode === 'edit' && options.activity) {
       formTitle.textContent = 'Modifier une activité';
@@ -866,6 +886,7 @@
   }
 
   function clearSlotValue() {
+    clearSlotRadios();
     if (!slotInput) {
       if (slotHelper) {
         slotHelper.textContent = slotHelperDefaultText;
@@ -884,11 +905,14 @@
       var trimmed = value.trim();
       if (trimmed && halfDaySlotMap[trimmed]) {
         slotInput.value = trimmed;
+        updateSlotRadios(trimmed);
         updateSlotHelper();
         return;
       }
       if (trimmed) {
-        slotInput.value = normalizeSlotId(trimmed);
+        var normalized = normalizeSlotId(trimmed);
+        slotInput.value = normalized;
+        updateSlotRadios(normalized);
         updateSlotHelper();
         return;
       }
@@ -1304,6 +1328,123 @@
       return;
     }
     slotHelper.textContent = slotHelperDefaultText;
+  }
+
+  function initializeSlotRadios() {
+    slotRadioInputs = [];
+    if (!slotRadioGroup) {
+      return;
+    }
+    while (slotRadioGroup.firstChild) {
+      slotRadioGroup.removeChild(slotRadioGroup.firstChild);
+    }
+    halfDaySlots.forEach(function (slot) {
+      var label = document.createElement('label');
+      label.className = 'slot-radio-option';
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'slot-choice';
+      input.value = slot.id;
+      input.id = 'slot-radio-' + slot.id;
+      input.addEventListener('change', handleSlotRadioChange);
+      var text = document.createElement('span');
+      text.textContent = slot.label;
+      label.appendChild(input);
+      label.appendChild(text);
+      slotRadioGroup.appendChild(label);
+      slotRadioInputs.push(input);
+    });
+    updateSlotRadios(slotInput ? slotInput.value : '');
+  }
+
+  function handleSlotRadioChange(event) {
+    var target = event && event.target ? event.target : null;
+    if (!target || !target.checked) {
+      return;
+    }
+    setSlotValue(target.value);
+  }
+
+  function updateSlotRadios(selectedSlotId) {
+    if (!slotRadioInputs || slotRadioInputs.length === 0) {
+      return;
+    }
+    if (typeof selectedSlotId !== 'string' || !selectedSlotId) {
+      clearSlotRadios();
+      return;
+    }
+    var normalized = halfDaySlotMap[selectedSlotId]
+      ? selectedSlotId
+      : normalizeSlotId(selectedSlotId);
+    slotRadioInputs.forEach(function (input) {
+      input.checked = input.value === normalized;
+    });
+  }
+
+  function clearSlotRadios() {
+    if (!slotRadioInputs || slotRadioInputs.length === 0) {
+      return;
+    }
+    slotRadioInputs.forEach(function (input) {
+      input.checked = false;
+    });
+  }
+
+  function applyWeekSelection(desiredWeekId) {
+    var targetId = '';
+    if (!Array.isArray(courseData)) {
+      courseData = [];
+    }
+    if (!weekSelect) {
+      targetId = typeof desiredWeekId === 'string' ? desiredWeekId : '';
+      if (weekIdInput) {
+        weekIdInput.value = targetId;
+      }
+      return targetId;
+    }
+    while (weekSelect.firstChild) {
+      weekSelect.removeChild(weekSelect.firstChild);
+    }
+    var fallbackId = '';
+    courseData.forEach(function (week, index) {
+      if (!week || typeof week !== 'object') {
+        return;
+      }
+      var option = document.createElement('option');
+      option.value = week.id;
+      option.textContent =
+        typeof week.name === 'string' && week.name.trim()
+          ? week.name.trim()
+          : 'Semaine ' + (index + 1);
+      weekSelect.appendChild(option);
+      if (!fallbackId) {
+        fallbackId = week.id;
+      }
+      if (
+        typeof desiredWeekId === 'string' &&
+        desiredWeekId &&
+        week.id === desiredWeekId
+      ) {
+        targetId = desiredWeekId;
+      }
+    });
+    if (!targetId) {
+      targetId =
+        typeof desiredWeekId === 'string' && desiredWeekId ? desiredWeekId : '';
+    }
+    if (!targetId) {
+      targetId = fallbackId;
+    }
+    if (targetId) {
+      weekSelect.value = targetId;
+    } else if (weekSelect.options.length > 0) {
+      weekSelect.selectedIndex = 0;
+      targetId = weekSelect.value;
+    }
+    if (weekIdInput) {
+      weekIdInput.value = targetId;
+    }
+    return targetId;
   }
 
   function saveData() {
