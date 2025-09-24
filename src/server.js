@@ -1,9 +1,14 @@
 'use strict';
 
+const fs = require('fs');
 const express = require('express');
-const { INDEX_FILE, PORT, PUBLIC_DIR } = require('./config');
+const { APP_VERSION, INDEX_FILE, PORT, PUBLIC_DIR } = require('./config');
 const { initializeDatabase } = require('./database');
 const apiRouter = require('./routes/api');
+
+const indexHtml = fs
+  .readFileSync(INDEX_FILE, 'utf8')
+  .replace(/%%APP_VERSION%%/g, APP_VERSION || '');
 
 function createApp() {
   const app = express();
@@ -18,7 +23,7 @@ function createApp() {
   }));
 
   app.get('*', (req, res) => {
-    res.sendFile(INDEX_FILE);
+    res.type('html').send(indexHtml);
   });
 
   app.use((err, req, res, next) => {
