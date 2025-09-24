@@ -154,7 +154,7 @@ const server = http.createServer((req, res) => {
           padding: 1.25rem;
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          gap: 0.75rem;
           flex: 1;
         }
 
@@ -171,7 +171,7 @@ const server = http.createServer((req, res) => {
         .activity-card {
           background: linear-gradient(180deg, rgba(243, 249, 255, 0.95), rgba(226, 240, 255, 0.95));
           border-radius: var(--radius-md);
-          padding: 1rem 1.25rem;
+          padding: 0.75rem 1rem;
           box-shadow: var(--shadow-sm);
           border-left: 4px solid rgba(47, 139, 255, 0.4);
           cursor: grab;
@@ -209,7 +209,7 @@ const server = http.createServer((req, res) => {
           justify-content: space-between;
           align-items: center;
           gap: 0.5rem;
-          margin-bottom: 0.75rem;
+          margin-bottom: 0.5rem;
         }
 
         .badge {
@@ -218,9 +218,9 @@ const server = http.createServer((req, res) => {
           justify-content: center;
           font-weight: 600;
           border-radius: 50%;
-          width: 2.25rem;
-          height: 2.25rem;
-          font-size: 1.1rem;
+          width: 2rem;
+          height: 2rem;
+          font-size: 1rem;
           background: rgba(90, 170, 255, 0.22);
           color: var(--grey-900);
           flex-shrink: 0;
@@ -257,22 +257,22 @@ const server = http.createServer((req, res) => {
         }
 
         .activity-description {
-          margin: 0 0 0.75rem;
+          margin: 0 0 0.5rem;
           color: var(--grey-700);
           font-size: 0.95rem;
         }
 
         .activity-material {
-          margin: 0 0 0.75rem;
-          font-size: 0.85rem;
+          margin: 0 0 0.5rem;
+          font-size: 0.82rem;
           color: var(--grey-500);
           font-weight: 600;
           word-break: break-word;
         }
 
         .activity-duration {
-          margin: 0 0 1rem;
-          font-size: 0.85rem;
+          margin: 0;
+          font-size: 0.82rem;
           color: var(--grey-500);
           font-weight: 600;
         }
