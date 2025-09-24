@@ -373,7 +373,8 @@
 
     var startSlotId = getWeekStartSlotId(week);
 
-    halfDaySlots.forEach(function (slot) {
+    var orderedSlots = getOrderedHalfDaySlotsForWeek(week);
+    orderedSlots.forEach(function (slot) {
       var slotSection = document.createElement('section');
       slotSection.className = 'slot-section';
       slotSection.setAttribute('data-week-id', week.id);
@@ -1742,6 +1743,24 @@
       return candidate;
     }
     return defaultSlotId;
+  }
+
+  function getOrderedHalfDaySlotsForWeek(week) {
+    var startSlotId = getWeekStartSlotId(week);
+    var baseSlots = halfDaySlots.slice();
+    var startIndex = baseSlots.findIndex(function (slot) {
+      return slot.id === startSlotId;
+    });
+    if (startIndex <= 0) {
+      return baseSlots;
+    }
+    var orderedSlots = [baseSlots[startIndex]];
+    baseSlots.forEach(function (slot, index) {
+      if (index !== startIndex) {
+        orderedSlots.push(slot);
+      }
+    });
+    return orderedSlots;
   }
 
   function countSlotActivitiesForWeek(weekId, slotId) {
