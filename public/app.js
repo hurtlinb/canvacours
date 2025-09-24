@@ -253,7 +253,8 @@
       slotAddButton.setAttribute('data-action', 'add-activity');
       slotAddButton.setAttribute('data-week-id', week.id);
       slotAddButton.setAttribute('data-slot-id', slot.id);
-      slotAddButton.textContent = 'Ajouter';
+      slotAddButton.setAttribute('aria-label', 'Ajouter une activité');
+      slotAddButton.textContent = '+';
 
       slotHeader.appendChild(slotInfo);
       slotHeader.appendChild(slotAddButton);
