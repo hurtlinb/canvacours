@@ -203,18 +203,19 @@ const server = http.createServer((req, res) => {
         .badge {
           display: inline-flex;
           align-items: center;
-          gap: 0.35rem;
+          justify-content: center;
           font-weight: 600;
-          border-radius: 999px;
-          padding: 0.3rem 0.75rem;
-          font-size: 0.82rem;
+          border-radius: 50%;
+          width: 2.25rem;
+          height: 2.25rem;
+          font-size: 1.1rem;
           background: rgba(90, 170, 255, 0.22);
           color: var(--grey-900);
+          flex-shrink: 0;
         }
 
         .badge::before {
-          content: '•';
-          font-size: 1rem;
+          content: none;
         }
 
         .badge-presentation {
@@ -491,10 +492,10 @@ const server = http.createServer((req, res) => {
             <div class="form-group">
               <label for="activity-type">Type d'activité</label>
               <select id="activity-type" name="activityType" required>
-                <option value="presentation">Présentation</option>
-                <option value="exercice">Exercice</option>
-                <option value="evaluation">Évaluation</option>
-                <option value="groupe">Travail de groupe</option>
+                <option value="presentation">🎤 Présentation</option>
+                <option value="exercice">📝 Exercice</option>
+                <option value="evaluation">📊 Évaluation</option>
+                <option value="groupe">🤝 Travail de groupe</option>
               </select>
             </div>
             <div class="form-group">
@@ -530,6 +531,13 @@ const server = http.createServer((req, res) => {
             exercice: 'Exercice',
             evaluation: 'Évaluation',
             groupe: 'Travail de groupe'
+          };
+
+          var typeIcons = {
+            presentation: '🎤',
+            exercice: '📝',
+            evaluation: '📊',
+            groupe: '🤝'
           };
 
           var board = document.getElementById('weeks-board');
@@ -690,8 +698,13 @@ const server = http.createServer((req, res) => {
 
             var badge = document.createElement('span');
             var typeKey = activity.type && typeLabels[activity.type] ? activity.type : 'presentation';
+            var badgeLabel = typeLabels[typeKey] || 'Activité';
+            var badgeIcon = typeIcons[typeKey] || '🎯';
             badge.className = 'badge badge-' + typeKey;
-            badge.textContent = typeLabels[typeKey];
+            badge.textContent = badgeIcon;
+            badge.setAttribute('role', 'img');
+            badge.setAttribute('aria-label', badgeLabel);
+            badge.title = badgeLabel;
 
             var dateLabel = document.createElement('span');
             dateLabel.className = 'activity-date';
