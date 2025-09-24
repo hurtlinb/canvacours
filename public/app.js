@@ -14,17 +14,43 @@
 
   var typeLabels = {
     presentation: 'Présentation',
-    exercice: 'Exercice',
-    evaluation: 'Évaluation',
-    groupe: 'Travail de groupe'
+    groupe: 'Travail de groupe',
+    demonstration: 'Démonstration',
+    'exercice-individuel': 'Exercice individuel',
+    recherche: "Recherche d'information",
+    jeu: 'Jeu/Tournoi/Challenge',
+    synthese: 'Synthèse',
+    evaluation: 'Évaluation'
   };
 
   var typeIcons = {
     presentation: '🎤',
-    exercice: '📝',
-    evaluation: '📊',
-    groupe: '🤝'
+    groupe: '🤝',
+    demonstration: '🧑‍🏫',
+    'exercice-individuel': '✍️',
+    recherche: '🔍',
+    jeu: '🏆',
+    synthese: '🧠',
+    evaluation: '📊'
   };
+
+  var typeAliases = {
+    exercice: 'exercice-individuel'
+  };
+
+  function normalizeActivityType(value) {
+    if (typeof value !== 'string') {
+      return 'presentation';
+    }
+    var key = value.trim().toLowerCase();
+    if (!key) {
+      return 'presentation';
+    }
+    if (typeAliases[key]) {
+      key = typeAliases[key];
+    }
+    return typeLabels[key] ? key : 'presentation';
+  }
 
   var halfDaySlots = [
     {
@@ -331,7 +357,7 @@
     top.className = 'activity-top';
 
     var badge = document.createElement('span');
-    var typeKey = activity.type && typeLabels[activity.type] ? activity.type : 'presentation';
+    var typeKey = normalizeActivityType(activity.type);
     var badgeLabel = typeLabels[typeKey] || 'Activité';
     var badgeIcon = typeIcons[typeKey] || '🎯';
     badge.className = 'badge badge-' + typeKey;
@@ -795,10 +821,7 @@
       formTitle.textContent = 'Modifier une activité';
       activityIdInput.value = options.activity.id;
       setSlotValue(options.activity.slot);
-      typeSelect.value =
-        options.activity.type && typeLabels[options.activity.type]
-          ? options.activity.type
-          : 'presentation';
+      typeSelect.value = normalizeActivityType(options.activity.type);
       durationInput.value = options.activity.duration || '';
       materialInput.value = options.activity.material || '';
       descriptionInput.value = options.activity.description || '';
@@ -1260,7 +1283,7 @@
     if (!activity || typeof activity !== 'object') {
       return null;
     }
-    var type = activity.type && typeLabels[activity.type] ? activity.type : 'presentation';
+    var type = normalizeActivityType(activity.type);
     var slotId = normalizeSlotId(activity.slot);
     var normalizedWeekStart = normalizeWeekStartDate(weekStartDate);
     var sanitizedDate = '';
