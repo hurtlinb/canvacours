@@ -71,21 +71,6 @@ const server = http.createServer((req, res) => {
           max-width: 640px;
         }
 
-        .app-kicker {
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          font-size: 0.75rem;
-          margin: 0 0 0.5rem;
-          opacity: 0.85;
-        }
-
-        .app-version {
-          margin-left: 0.35rem;
-          font-weight: 600;
-          letter-spacing: normal;
-          text-transform: none;
-        }
-
         .app-header h1 {
           margin: 0 0 0.5rem;
           font-size: 2.75rem;
@@ -150,12 +135,102 @@ const server = http.createServer((req, res) => {
           align-self: flex-start;
         }
 
-        .activities {
+        .week-title-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+        }
+
+        .week-date-picker {
+          display: flex;
+          flex-direction: column;
+          gap: 0.35rem;
+          align-items: flex-start;
+        }
+
+        .week-date-picker span {
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: var(--grey-500);
+        }
+
+        .week-date-picker input {
+          border-radius: var(--radius-md);
+          border: 1px solid rgba(47, 139, 255, 0.35);
+          padding: 0.55rem 0.75rem;
+          font-size: 0.95rem;
+          font-family: inherit;
+          background: rgba(247, 251, 255, 0.9);
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .week-date-picker input:focus {
+          outline: none;
+          border-color: var(--blue-500);
+          box-shadow: 0 0 0 3px rgba(47, 139, 255, 0.25);
+        }
+
+        .week-slots {
           padding: 1.25rem;
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          gap: 1.25rem;
           flex: 1;
+        }
+
+        .slot-section {
+          background: rgba(240, 246, 255, 0.65);
+          border: 1px solid rgba(90, 170, 255, 0.25);
+          border-radius: var(--radius-md);
+          padding: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.85rem;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .slot-section.is-drop-target {
+          border-color: var(--blue-500);
+          box-shadow: 0 0 0 3px rgba(47, 139, 255, 0.18);
+        }
+
+        .slot-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+        }
+
+        .slot-info {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+
+        .slot-title {
+          font-weight: 700;
+          font-size: 1rem;
+          color: var(--grey-900);
+        }
+
+        .slot-subtitle {
+          font-size: 0.85rem;
+          color: var(--grey-500);
+        }
+
+        .slot-activities {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          min-height: 52px;
+          padding: 0.25rem;
+          border-radius: var(--radius-md);
+          transition: background 0.2s ease;
+        }
+
+        .slot-activities.is-drop-target {
+          background: rgba(47, 139, 255, 0.08);
         }
 
         .empty-state {
@@ -166,6 +241,13 @@ const server = http.createServer((req, res) => {
           color: var(--grey-500);
           text-align: center;
           border: 1px dashed rgba(47, 139, 255, 0.4);
+        }
+
+        .slot-activities .empty-state {
+          background: rgba(255, 255, 255, 0.85);
+          border-color: rgba(47, 139, 255, 0.35);
+          font-size: 0.9rem;
+          pointer-events: none;
         }
 
         .activity-card {
@@ -262,6 +344,14 @@ const server = http.createServer((req, res) => {
           font-size: 0.95rem;
         }
 
+        .activity-material {
+          margin: 0 0 0.75rem;
+          font-size: 0.85rem;
+          color: var(--grey-500);
+          font-weight: 600;
+          word-break: break-word;
+        }
+
         .activity-duration {
           margin: 0 0 1rem;
           font-size: 0.85rem;
@@ -288,6 +378,18 @@ const server = http.createServer((req, res) => {
         .btn-tertiary:hover {
           background: rgba(47, 139, 255, 0.1);
           color: var(--blue-500);
+        }
+
+        .btn-slot-add {
+          border: 1px dashed rgba(47, 139, 255, 0.45);
+          border-radius: 999px;
+          padding: 0.4rem 0.9rem;
+          font-size: 0.85rem;
+          background: rgba(255, 255, 255, 0.7);
+        }
+
+        .btn-slot-add:hover {
+          background: rgba(47, 139, 255, 0.12);
         }
 
         .btn-primary,
@@ -422,6 +524,13 @@ const server = http.createServer((req, res) => {
           min-height: 110px;
         }
 
+        .form-helper {
+          margin: 0;
+          font-size: 0.85rem;
+          color: var(--grey-500);
+          line-height: 1.4;
+        }
+
         .form-actions {
           display: flex;
           gap: 0.75rem;
@@ -475,9 +584,7 @@ const server = http.createServer((req, res) => {
       <header class="app-header">
         <div class="header-content">
           <div class="header-text">
-            <p class="app-kicker">Planification pédagogique <span class="app-version">v${version}</span></p>
             <h1>Canvas de cours</h1>
-            <p class="app-subtitle">Organisez et ajustez les activités de vos 5 semaines de cours.</p>
           </div>
         </div>
       </header>
@@ -485,7 +592,7 @@ const server = http.createServer((req, res) => {
         <section class="board" id="weeks-board" aria-live="polite"></section>
       </main>
       <footer class="app-footer">
-        <p>Version ${version}</p>
+        <p>v${version}</p>
       </footer>
       <div class="modal" id="activity-modal" aria-hidden="true">
         <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="form-title">
@@ -498,8 +605,11 @@ const server = http.createServer((req, res) => {
               <select id="week-select" name="weekId" required></select>
             </div>
             <div class="form-group">
-              <label for="date">Date</label>
-              <input id="date" name="date" type="date" required />
+              <label for="slot">Demi-journée</label>
+              <select id="slot" name="slot" required></select>
+              <p class="form-helper" id="slot-helper">
+                La date affichée pour l'activité sera calculée automatiquement à partir de la semaine sélectionnée.
+              </p>
             </div>
             <div class="form-group">
               <label for="activity-type">Type d'activité</label>
@@ -513,6 +623,10 @@ const server = http.createServer((req, res) => {
             <div class="form-group">
               <label for="duration">Temps prévu</label>
               <input id="duration" name="duration" type="text" placeholder="Ex. 2h, 45 minutes" />
+            </div>
+            <div class="form-group">
+              <label for="material">Matériel</label>
+              <input id="material" name="material" type="text" placeholder="Ex. diaporama_introduction.pdf" />
             </div>
             <div class="form-group">
               <label for="description">Description</label>
@@ -534,6 +648,7 @@ const server = http.createServer((req, res) => {
             return {
               id: 'week-' + (index + 1),
               name: 'Semaine ' + (index + 1),
+              startDate: '',
               activities: []
             };
           });
@@ -545,21 +660,18 @@ const server = http.createServer((req, res) => {
             groupe: 'Travail de groupe'
           };
 
-          var typeIcons = {
-            presentation: '🎤',
-            exercice: '📝',
-            evaluation: '📊',
-            groupe: '🤝'
-          };
+
 
           var board = document.getElementById('weeks-board');
           var modal = document.getElementById('activity-modal');
           var form = document.getElementById('activity-form');
           var formTitle = document.getElementById('form-title');
           var weekSelect = document.getElementById('week-select');
-          var dateInput = document.getElementById('date');
+          var slotSelect = document.getElementById('slot');
+          var slotHelper = document.getElementById('slot-helper');
           var typeSelect = document.getElementById('activity-type');
           var durationInput = document.getElementById('duration');
+          var materialInput = document.getElementById('material');
           var descriptionInput = document.getElementById('description');
           var activityIdInput = document.getElementById('activity-id');
           var modalCloseButtons = modal.querySelectorAll('[data-action="close-modal"]');
@@ -567,13 +679,24 @@ const server = http.createServer((req, res) => {
           var courseData = loadData();
 
           initializeWeekOptions();
+          initializeSlotOptions();
+          updateSlotHelper();
           renderBoard();
+
+          if (weekSelect) {
+            weekSelect.addEventListener('change', updateSlotHelper);
+          }
+
+          if (slotSelect) {
+            slotSelect.addEventListener('change', updateSlotHelper);
+          }
 
           board.addEventListener('click', function (event) {
             var addTrigger = event.target.closest('[data-action="add-activity"]');
             if (addTrigger) {
               var addWeekId = addTrigger.getAttribute('data-week-id');
-              openForm('create', { weekId: addWeekId });
+              var addSlotId = addTrigger.getAttribute('data-slot-id');
+              openForm('create', { weekId: addWeekId, slotId: addSlotId });
               return;
             }
 
@@ -622,13 +745,16 @@ const server = http.createServer((req, res) => {
             var selectedWeekId = formData.get('weekId');
             var payload = {
               id: activityId || generateId(),
-              date: formData.get('date'),
+              slot: formData.get('slot'),
               type: formData.get('activityType'),
               duration: (formData.get('duration') || '').trim(),
+              material: (formData.get('material') || '').trim(),
               description: (formData.get('description') || '').trim()
             };
 
-            if (!payload.date || !payload.description) {
+            payload.slot = normalizeSlotId(payload.slot);
+
+            if (!payload.description) {
               return;
             }
 
@@ -652,6 +778,7 @@ const server = http.createServer((req, res) => {
               var column = createWeekColumn(week);
               board.appendChild(column);
             });
+            updateSlotHelper();
           }
 
           function createWeekColumn(week) {
@@ -662,6 +789,9 @@ const server = http.createServer((req, res) => {
             var header = document.createElement('header');
             header.className = 'week-header';
 
+            var titleRow = document.createElement('div');
+            titleRow.className = 'week-title-row';
+
             var title = document.createElement('h2');
             title.textContent = week.name;
 
@@ -670,40 +800,115 @@ const server = http.createServer((req, res) => {
             addButton.className = 'btn-secondary';
             addButton.setAttribute('data-action', 'add-activity');
             addButton.setAttribute('data-week-id', week.id);
+            addButton.setAttribute('data-slot-id', halfDaySlots[0].id);
             addButton.textContent = 'Ajouter une activité';
 
-            header.appendChild(title);
-            header.appendChild(addButton);
+            titleRow.appendChild(title);
+            titleRow.appendChild(addButton);
 
-            var list = document.createElement('div');
-            list.className = 'activities';
+            var datePicker = document.createElement('label');
+            datePicker.className = 'week-date-picker';
 
-            if (week.activities.length === 0) {
-              var empty = document.createElement('p');
-              empty.className = 'empty-state';
-              empty.textContent = 'Aucune activité planifiée pour le moment.';
-              list.appendChild(empty);
-            } else {
-              week.activities.forEach(function (activity) {
-                list.appendChild(createActivityCard(activity, week.id));
+            var dateLabel = document.createElement('span');
+            dateLabel.textContent = 'Date de début';
+
+            var dateInput = document.createElement('input');
+            dateInput.type = 'date';
+            dateInput.value = week.startDate || '';
+            dateInput.addEventListener('change', function (event) {
+              var normalized = sanitizeDateString(event.target.value);
+              week.startDate = normalized;
+              event.target.value = normalized;
+              saveData();
+              renderBoard();
+              updateSlotHelper();
+            });
+
+            datePicker.appendChild(dateLabel);
+            datePicker.appendChild(dateInput);
+
+            header.appendChild(titleRow);
+            header.appendChild(datePicker);
+
+            var slotsWrapper = document.createElement('div');
+            slotsWrapper.className = 'week-slots';
+
+            halfDaySlots.forEach(function (slot) {
+              var slotSection = document.createElement('section');
+              slotSection.className = 'slot-section';
+              slotSection.setAttribute('data-week-id', week.id);
+              slotSection.setAttribute('data-slot-id', slot.id);
+
+              var slotHeader = document.createElement('div');
+              slotHeader.className = 'slot-header';
+
+              var slotInfo = document.createElement('div');
+              slotInfo.className = 'slot-info';
+
+              var slotTitle = document.createElement('span');
+              slotTitle.className = 'slot-title';
+              slotTitle.textContent = slot.label;
+
+              var slotSubtitle = document.createElement('span');
+              slotSubtitle.className = 'slot-subtitle';
+              slotSubtitle.textContent = formatSlotSubtitle(week, slot.id);
+
+              slotInfo.appendChild(slotTitle);
+              slotInfo.appendChild(slotSubtitle);
+
+              var slotAddButton = document.createElement('button');
+              slotAddButton.type = 'button';
+              slotAddButton.className = 'btn-tertiary btn-slot-add';
+              slotAddButton.setAttribute('data-action', 'add-activity');
+              slotAddButton.setAttribute('data-week-id', week.id);
+              slotAddButton.setAttribute('data-slot-id', slot.id);
+              slotAddButton.textContent = 'Ajouter';
+
+              slotHeader.appendChild(slotInfo);
+              slotHeader.appendChild(slotAddButton);
+
+              var slotList = document.createElement('div');
+              slotList.className = 'slot-activities';
+              slotList.setAttribute('data-week-id', week.id);
+              slotList.setAttribute('data-slot-id', slot.id);
+
+              var slotActivities = week.activities.filter(function (activity) {
+                return activity.slot === slot.id;
               });
-            }
+
+              if (slotActivities.length === 0) {
+                var empty = document.createElement('p');
+                empty.className = 'empty-state';
+                empty.textContent = 'Aucune activité planifiée pour cette demi-journée.';
+                slotList.appendChild(empty);
+              } else {
+                slotActivities.forEach(function (activity) {
+                  slotList.appendChild(createActivityCard(activity, week));
+                });
+              }
+
+              slotList.addEventListener('dragover', handleSlotDragOver);
+              slotList.addEventListener('dragleave', handleSlotDragLeave);
+              slotList.addEventListener('drop', handleSlotDrop);
+
+              slotSection.appendChild(slotHeader);
+              slotSection.appendChild(slotList);
+
+              slotsWrapper.appendChild(slotSection);
+            });
 
             column.appendChild(header);
-            column.appendChild(list);
-
-            column.addEventListener('dragover', handleDragOver);
-            column.addEventListener('dragleave', handleDragLeave);
-            column.addEventListener('drop', handleDrop);
+            column.appendChild(slotsWrapper);
 
             return column;
           }
 
-          function createActivityCard(activity, weekId) {
+          function createActivityCard(activity, week) {
             var card = document.createElement('article');
             card.className = 'activity-card';
             card.setAttribute('data-activity-id', activity.id);
-            card.setAttribute('data-week-id', weekId);
+            card.setAttribute('data-week-id', week.id);
+            card.setAttribute('data-slot-id', activity.slot);
             card.draggable = true;
 
             var top = document.createElement('div');
@@ -721,7 +926,7 @@ const server = http.createServer((req, res) => {
 
             var dateLabel = document.createElement('span');
             dateLabel.className = 'activity-date';
-            dateLabel.textContent = formatDate(activity.date);
+            dateLabel.textContent = formatActivitySchedule(week, activity.slot);
 
             top.appendChild(badge);
             top.appendChild(dateLabel);
@@ -729,6 +934,12 @@ const server = http.createServer((req, res) => {
             var description = document.createElement('p');
             description.className = 'activity-description';
             description.textContent = activity.description || 'Description à préciser.';
+
+            var material = document.createElement('p');
+            material.className = 'activity-material';
+            material.textContent = activity.material
+              ? 'Matériel : ' + activity.material
+              : 'Matériel : à préciser';
 
             var duration = document.createElement('p');
             duration.className = 'activity-duration';
@@ -741,7 +952,7 @@ const server = http.createServer((req, res) => {
             editButton.type = 'button';
             editButton.className = 'btn-tertiary';
             editButton.setAttribute('data-action', 'edit-activity');
-            editButton.setAttribute('data-week-id', weekId);
+            editButton.setAttribute('data-week-id', week.id);
             editButton.setAttribute('data-activity-id', activity.id);
             editButton.textContent = 'Modifier';
 
@@ -749,6 +960,7 @@ const server = http.createServer((req, res) => {
 
             card.appendChild(top);
             card.appendChild(description);
+            card.appendChild(material);
             card.appendChild(duration);
             card.appendChild(actions);
 
@@ -779,21 +991,7 @@ const server = http.createServer((req, res) => {
             var card = event.currentTarget;
             card.classList.remove('is-dragging');
             draggedActivityId = null;
-          }
-
-          function handleDragOver(event) {
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
-            var column = event.currentTarget;
-            column.classList.add('is-drop-target');
-          }
-
-          function handleDragLeave(event) {
-            var column = event.currentTarget;
-            if (event.relatedTarget && column.contains(event.relatedTarget)) {
-              return;
-            }
-            column.classList.remove('is-drop-target');
+            clearAllSlotDropState();
           }
 
           function handleCardDragOver(event) {
@@ -806,6 +1004,10 @@ const server = http.createServer((req, res) => {
             card.classList.add('is-drop-target');
             card.classList.toggle('is-drop-before', isBefore);
             card.classList.toggle('is-drop-after', !isBefore);
+            var slotContainer = getSlotContainer(card);
+            if (slotContainer) {
+              slotContainer.classList.add('is-drop-target');
+            }
           }
 
           function handleCardDragLeave(event) {
@@ -814,6 +1016,13 @@ const server = http.createServer((req, res) => {
               return;
             }
             clearCardDropState(card);
+            var slotContainer = getSlotContainer(card);
+            if (
+              slotContainer &&
+              (!event.relatedTarget || !slotContainer.contains(event.relatedTarget))
+            ) {
+              slotContainer.classList.remove('is-drop-target');
+            }
           }
 
           function handleCardDrop(event) {
@@ -821,20 +1030,21 @@ const server = http.createServer((req, res) => {
             event.stopPropagation();
             var card = event.currentTarget;
             var targetWeekId = card.getAttribute('data-week-id');
+            var targetSlotId = card.getAttribute('data-slot-id');
             var targetActivityId = card.getAttribute('data-activity-id');
             var activityId = draggedActivityId || event.dataTransfer.getData('text/plain');
             var bounding = card.getBoundingClientRect();
             var offset = event.clientY - bounding.top;
             var isBefore = offset < bounding.height / 2;
+            var slotContainer = getSlotContainer(card);
             clearCardDropState(card);
-            var relatedColumn = null;
-            if (targetWeekId) {
-              relatedColumn = board.querySelector('.week-column[data-week-id="' + targetWeekId + '"]');
+            if (slotContainer) {
+              slotContainer.classList.remove('is-drop-target');
             }
-            if (relatedColumn) {
-              relatedColumn.classList.remove('is-drop-target');
+            if (!activityId || !targetWeekId || !targetActivityId || !targetSlotId) {
+              return;
             }
-            if (!activityId || !targetWeekId || !targetActivityId) {
+            if (activityId === targetActivityId) {
               return;
             }
             var targetWeek = courseData.find(function (week) {
@@ -843,16 +1053,19 @@ const server = http.createServer((req, res) => {
             if (!targetWeek) {
               return;
             }
-            var targetIndex = targetWeek.activities.findIndex(function (activity) {
+            var slotActivities = targetWeek.activities.filter(function (activity) {
+              return activity.slot === targetSlotId;
+            });
+            var targetSlotIndex = slotActivities.findIndex(function (activity) {
               return activity.id === targetActivityId;
             });
-            if (targetIndex === -1) {
+            if (targetSlotIndex === -1) {
               return;
             }
             if (!isBefore) {
-              targetIndex += 1;
+              targetSlotIndex += 1;
             }
-            moveActivity(activityId, targetWeekId, targetIndex);
+            moveActivity(activityId, targetWeekId, targetSlotId, targetSlotIndex);
             draggedActivityId = null;
           }
 
@@ -860,20 +1073,69 @@ const server = http.createServer((req, res) => {
             card.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after');
           }
 
-          function handleDrop(event) {
+          function handleSlotDragOver(event) {
             event.preventDefault();
-            var column = event.currentTarget;
-            column.classList.remove('is-drop-target');
-            var targetWeekId = column.getAttribute('data-week-id');
-            var activityId = draggedActivityId || event.dataTransfer.getData('text/plain');
-            if (!activityId) {
+            event.dataTransfer.dropEffect = 'move';
+            var slotList = event.currentTarget;
+            slotList.classList.add('is-drop-target');
+            var slotSection = slotList.parentElement;
+            if (slotSection && slotSection.classList) {
+              slotSection.classList.add('is-drop-target');
+            }
+          }
+
+          function handleSlotDragLeave(event) {
+            var slotList = event.currentTarget;
+            if (event.relatedTarget && slotList.contains(event.relatedTarget)) {
               return;
             }
-            moveActivity(activityId, targetWeekId);
+            clearSlotDropState(slotList);
+          }
+
+          function handleSlotDrop(event) {
+            event.preventDefault();
+            var slotList = event.currentTarget;
+            var targetWeekId = slotList.getAttribute('data-week-id');
+            var targetSlotId = slotList.getAttribute('data-slot-id');
+            var activityId = draggedActivityId || event.dataTransfer.getData('text/plain');
+            clearSlotDropState(slotList);
+            if (!activityId || !targetWeekId || !targetSlotId) {
+              return;
+            }
+            var slotIndex = countSlotActivitiesForWeek(targetWeekId, targetSlotId);
+            moveActivity(activityId, targetWeekId, targetSlotId, slotIndex);
             draggedActivityId = null;
           }
 
-          function moveActivity(activityId, targetWeekId, targetIndex) {
+          function clearSlotDropState(slotList) {
+            slotList.classList.remove('is-drop-target');
+            var slotSection = slotList.parentElement;
+            if (slotSection && slotSection.classList) {
+              slotSection.classList.remove('is-drop-target');
+            }
+          }
+
+          function clearAllSlotDropState() {
+            var elements = board.querySelectorAll(
+              '.slot-activities.is-drop-target, .slot-section.is-drop-target'
+            );
+            Array.prototype.forEach.call(elements, function (element) {
+              element.classList.remove('is-drop-target');
+            });
+          }
+
+          function getSlotContainer(element) {
+            var current = element;
+            while (current && current !== board) {
+              if (current.classList && current.classList.contains('slot-activities')) {
+                return current;
+              }
+              current = current.parentElement;
+            }
+            return null;
+          }
+
+          function moveActivity(activityId, targetWeekId, targetSlotId, targetSlotIndex) {
             if (!activityId || !targetWeekId) {
               return false;
             }
@@ -881,36 +1143,30 @@ const server = http.createServer((req, res) => {
             if (!sourceWeek) {
               return false;
             }
-            var index = sourceWeek.activities.findIndex(function (item) {
+            var activityIndex = sourceWeek.activities.findIndex(function (item) {
               return item.id === activityId;
             });
-            if (index === -1) {
-              return false;
+
             }
-            var movedActivity = sourceWeek.activities.splice(index, 1)[0];
+            var sourceActivity = sourceWeek.activities[activityIndex];
+            var sourceSlotId = normalizeSlotId(sourceActivity.slot);
+            var sourceSlotIndex = getSlotIndexInActivities(
+              sourceWeek.activities,
+              sourceSlotId,
+              activityId
+            );
+            var movedActivity = sourceWeek.activities.splice(activityIndex, 1)[0];
             var targetWeek = courseData.find(function (week) {
               return week.id === targetWeekId;
             });
             if (!targetWeek) {
-              sourceWeek.activities.splice(index, 0, movedActivity);
-              return false;
+
             }
-            if (typeof targetIndex === 'number') {
-              if (targetWeek === sourceWeek && index < targetIndex) {
-                targetIndex -= 1;
-              }
-              if (targetIndex < 0) {
-                targetIndex = 0;
-              }
-              if (targetIndex > targetWeek.activities.length) {
-                targetIndex = targetWeek.activities.length;
-              }
-              targetWeek.activities.splice(targetIndex, 0, movedActivity);
-            } else {
-              targetWeek.activities.push(movedActivity);
+            var normalizedTargetSlotId = normalizeSlotId(targetSlotId || movedActivity.slot);
+            if (typeof targetSlotIndex !== 'number' || targetSlotIndex < 0) {
+              targetSlotIndex = countSlotActivities(targetWeek.activities, normalizedTargetSlotId);
             }
-            persistState();
-            return true;
+
           }
 
           function addActivity(weekId, activity) {
@@ -927,9 +1183,7 @@ const server = http.createServer((req, res) => {
             if (!sanitizedActivity) {
               return false;
             }
-            targetWeek.activities.push(sanitizedActivity);
-            persistState();
-            return true;
+
           }
 
           function updateActivity(activityId, newWeekId, updatedData) {
@@ -946,33 +1200,14 @@ const server = http.createServer((req, res) => {
             if (activityIndex === -1) {
               return false;
             }
-            var sanitizedActivity = sanitizeActivity({
-              id: activityId,
-              date: updatedData.date,
-              type: updatedData.type,
-              duration: updatedData.duration,
-              description: updatedData.description
-            });
-            if (!sanitizedActivity) {
-              return false;
-            }
-            if (originWeek.id === newWeekId) {
-              originWeek.activities[activityIndex] = sanitizedActivity;
-              persistState();
-              return true;
+
             }
             var destinationWeek = courseData.find(function (week) {
               return week.id === newWeekId;
             });
             if (!destinationWeek) {
               originWeek.activities[activityIndex] = sanitizedActivity;
-              persistState();
-              return true;
-            }
-            originWeek.activities.splice(activityIndex, 1);
-            destinationWeek.activities.push(sanitizedActivity);
-            persistState();
-            return true;
+
           }
 
           function findWeekByActivityId(activityId) {
@@ -997,21 +1232,30 @@ const server = http.createServer((req, res) => {
               formTitle.textContent = 'Modifier une activité';
               activityIdInput.value = options.activity.id;
               setSelectValue(weekSelect, options.weekId || options.activity.weekId);
-              dateInput.value = options.activity.date || '';
-              typeSelect.value = options.activity.type && typeLabels[options.activity.type] ? options.activity.type : 'presentation';
+              setSelectValue(slotSelect, options.activity.slot);
+              typeSelect.value =
+                options.activity.type && typeLabels[options.activity.type]
+                  ? options.activity.type
+                  : 'presentation';
               durationInput.value = options.activity.duration || '';
+              materialInput.value = options.activity.material || '';
               descriptionInput.value = options.activity.description || '';
             } else {
               formTitle.textContent = 'Ajouter une activité';
               activityIdInput.value = '';
               setSelectValue(weekSelect, options.weekId);
+              setSelectValue(slotSelect, options.slotId);
               typeSelect.value = 'presentation';
+              materialInput.value = '';
             }
+            updateSlotHelper();
             modal.classList.add('is-open');
             modal.setAttribute('aria-hidden', 'false');
             document.body.classList.add('modal-open');
             window.setTimeout(function () {
-              dateInput.focus();
+              if (slotSelect) {
+                slotSelect.focus();
+              }
             }, 100);
           }
 
@@ -1021,6 +1265,9 @@ const server = http.createServer((req, res) => {
             document.body.classList.remove('modal-open');
             form.reset();
             activityIdInput.value = '';
+            if (slotHelper) {
+              slotHelper.textContent = slotHelperDefaultText;
+            }
           }
 
           function setSelectValue(select, value) {
@@ -1056,12 +1303,17 @@ const server = http.createServer((req, res) => {
                 if (!savedWeek) {
                   return cloneWeek(defaultWeek);
                 }
+                var startDate = sanitizeDateString(savedWeek.startDate);
+                if (!startDate) {
+                  startDate = deriveStartDateFromActivities(savedWeek.activities);
+                }
                 var activities = Array.isArray(savedWeek.activities)
                   ? savedWeek.activities.map(sanitizeActivity).filter(Boolean)
                   : [];
                 return {
                   id: defaultWeek.id,
                   name: defaultWeek.name,
+                  startDate: startDate,
                   activities: activities
                 };
               });
@@ -1072,6 +1324,9 @@ const server = http.createServer((req, res) => {
           }
 
           function initializeWeekOptions() {
+            if (!weekSelect) {
+              return;
+            }
             weekSelect.innerHTML = '';
             courseData.forEach(function (week) {
               var option = document.createElement('option');
@@ -1082,6 +1337,49 @@ const server = http.createServer((req, res) => {
             if (weekSelect.options.length > 0) {
               weekSelect.selectedIndex = 0;
             }
+          }
+
+          function initializeSlotOptions() {
+            if (!slotSelect) {
+              return;
+            }
+            slotSelect.innerHTML = '';
+            halfDaySlots.forEach(function (slot) {
+              var option = document.createElement('option');
+              option.value = slot.id;
+              option.textContent = slot.label;
+              slotSelect.appendChild(option);
+            });
+            if (slotSelect.options.length > 0) {
+              slotSelect.selectedIndex = 0;
+            }
+          }
+
+          function updateSlotHelper() {
+            if (!slotHelper) {
+              return;
+            }
+            if (!weekSelect || !slotSelect) {
+              slotHelper.textContent = slotHelperDefaultText;
+              return;
+            }
+            var selectedWeekId = weekSelect.value;
+            var selectedSlotId = slotSelect.value;
+            var week = courseData.find(function (item) {
+              return item.id === selectedWeekId;
+            });
+            if (!week) {
+              slotHelper.textContent = slotHelperDefaultText;
+              return;
+            }
+            var slot = halfDaySlotMap[selectedSlotId];
+            if (!slot) {
+              slotHelper.textContent = slotHelperDefaultText;
+              return;
+            }
+            var computedDate = computeSlotDate(week.startDate, selectedSlotId);
+            var dateText = computedDate ? formatDate(computedDate) : 'Date à définir';
+            slotHelper.textContent = slot.dayLabel + ' · ' + slot.label + ' — ' + dateText;
           }
 
           function saveData() {
@@ -1107,6 +1405,7 @@ const server = http.createServer((req, res) => {
             return {
               id: week.id,
               name: week.name,
+              startDate: sanitizeDateString(week.startDate),
               activities: []
             };
           }
@@ -1118,20 +1417,21 @@ const server = http.createServer((req, res) => {
             var type = activity.type && typeLabels[activity.type] ? activity.type : 'presentation';
             return {
               id: activity.id || generateId(),
-              date: activity.date || '',
+              slot: normalizeSlotId(activity.slot),
               type: type,
               duration: activity.duration || '',
+              material: typeof activity.material === 'string' ? activity.material.trim() : '',
               description: activity.description || ''
             };
           }
 
           function formatDate(value) {
             if (!value) {
-              return 'Date à confirmer';
+              return 'Date à définir';
             }
             var date = new Date(value + 'T00:00:00');
             if (isNaN(date.getTime())) {
-              return value;
+              return 'Date à définir';
             }
             return date.toLocaleDateString('fr-FR', {
               weekday: 'short',
@@ -1139,6 +1439,140 @@ const server = http.createServer((req, res) => {
               month: 'long',
               year: 'numeric'
             });
+          }
+
+          function formatSlotSubtitle(week, slotId) {
+            var slot = halfDaySlotMap[slotId];
+            if (!slot) {
+              return '';
+            }
+            var computedDate = computeSlotDate(week.startDate, slotId);
+            var dateText = computedDate ? formatDate(computedDate) : 'Date à définir';
+            return slot.dayLabel + ' · ' + dateText;
+          }
+
+          function formatActivitySchedule(week, slotId) {
+            var slot = halfDaySlotMap[slotId];
+            var label = slot ? slot.label : '';
+            var computedDate = computeSlotDate(week.startDate, slotId);
+            var dateText = computedDate ? formatDate(computedDate) : 'Date à définir';
+            if (!label) {
+              return dateText;
+            }
+            return label + ' · ' + dateText;
+          }
+
+          function computeSlotDate(startDate, slotId) {
+            var normalizedStart = sanitizeDateString(startDate);
+            var slot = halfDaySlotMap[slotId];
+            if (!normalizedStart || !slot) {
+              return '';
+            }
+            var baseDate = new Date(normalizedStart + 'T00:00:00');
+            if (isNaN(baseDate.getTime())) {
+              return '';
+            }
+            baseDate.setDate(baseDate.getDate() + (slot.dayOffset || 0));
+            return baseDate.toISOString().slice(0, 10);
+          }
+
+          function sanitizeDateString(value) {
+            if (typeof value !== 'string') {
+              return '';
+            }
+            var trimmed = value.trim();
+            if (!trimmed) {
+              return '';
+            }
+            var shortValue = trimmed.slice(0, 10);
+            var date = new Date(shortValue + 'T00:00:00');
+            if (isNaN(date.getTime())) {
+              return '';
+            }
+            return date.toISOString().slice(0, 10);
+          }
+
+          function normalizeSlotId(slotId) {
+            if (slotId && halfDaySlotMap[slotId]) {
+              return slotId;
+            }
+            return halfDaySlots[0].id;
+          }
+
+          function countSlotActivitiesForWeek(weekId, slotId) {
+            var week = courseData.find(function (item) {
+              return item.id === weekId;
+            });
+            if (!week) {
+              return 0;
+            }
+            return countSlotActivities(week.activities, slotId);
+          }
+
+          function countSlotActivities(activities, slotId) {
+            var normalizedSlot = normalizeSlotId(slotId);
+            var total = 0;
+            for (var i = 0; i < activities.length; i += 1) {
+              if (activities[i].slot === normalizedSlot) {
+                total += 1;
+              }
+            }
+            return total;
+          }
+
+          function getSlotIndexInActivities(activities, slotId, activityId) {
+            var normalizedSlot = normalizeSlotId(slotId);
+            var position = 0;
+            for (var i = 0; i < activities.length; i += 1) {
+              if (activities[i].slot !== normalizedSlot) {
+                continue;
+              }
+              if (activities[i].id === activityId) {
+                return position;
+              }
+              position += 1;
+            }
+            return -1;
+          }
+
+          function insertActivityInSlot(activities, activity, slotId, slotIndex) {
+            var normalizedSlot = normalizeSlotId(slotId);
+            activity.slot = normalizedSlot;
+            if (typeof slotIndex !== 'number' || slotIndex < 0) {
+              slotIndex = countSlotActivities(activities, normalizedSlot);
+            }
+            var currentSlotCount = 0;
+            var insertionIndex = activities.length;
+            for (var i = 0; i < activities.length; i += 1) {
+              if (activities[i].slot !== normalizedSlot) {
+                continue;
+              }
+              if (currentSlotCount >= slotIndex) {
+                insertionIndex = i;
+                break;
+              }
+              currentSlotCount += 1;
+            }
+            activities.splice(insertionIndex, 0, activity);
+          }
+
+          function deriveStartDateFromActivities(activities) {
+            if (!Array.isArray(activities)) {
+              return '';
+            }
+            var validDates = activities
+              .map(function (item) {
+                if (!item || typeof item.date !== 'string') {
+                  return '';
+                }
+                return sanitizeDateString(item.date);
+              })
+              .filter(Boolean);
+            if (validDates.length === 0) {
+              return '';
+            }
+            validDates.sort();
+            return validDates[0];
           }
 
           function generateId() {
