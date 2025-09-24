@@ -34,10 +34,7 @@ jobs:
             cd "${APP_DIR}" || exit 0
 
             echo "➡️  git fetch/reset"
-            git fetch origin "${BRANCH}" || true
-            git checkout "${BRANCH}" || true
-            git reset --hard "origin/${BRANCH}" || true
-            # ou: git pull --rebase --autostash origin "${BRANCH}" || true
+            git pull
 
             echo "✅ Déploiement terminé"
             exit 0                     # force un succès propre
@@ -63,11 +60,8 @@ jobs:
             echo "➡️  CD ${APP_DIR}"
             cd "${APP_DIR}" || exit 0
 
-            # Redémarrage PM2 — ignorer toute erreur
-            if command -v pm2 >/dev/null 2>&1; then
-              npx pm2 restart index || true
-              pm2 save || true
-            fi
+            npx pm2 restart index || true
+            
 
             echo "✅ Redémarrage terminé"
             exit 0
