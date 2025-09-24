@@ -1,6 +1,6 @@
 {
   "name": "canvacours",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Basic Node.js application with a simple HTTP server.",
   "main": "index.js",
   "scripts": {
