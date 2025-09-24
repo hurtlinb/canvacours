@@ -660,7 +660,33 @@ const server = http.createServer((req, res) => {
             groupe: 'Travail de groupe'
           };
 
+          var typeIcons = {
+            presentation: '🎤',
+            exercice: '📝',
+            evaluation: '📊',
+            groupe: '🤝'
+          };
 
+          var halfDaySlots = [
+            { id: 'monday-am', label: 'Matin', dayLabel: 'Lundi', dayOffset: 0 },
+            { id: 'monday-pm', label: 'Après-midi', dayLabel: 'Lundi', dayOffset: 0 },
+            { id: 'tuesday-am', label: 'Matin', dayLabel: 'Mardi', dayOffset: 1 },
+            { id: 'tuesday-pm', label: 'Après-midi', dayLabel: 'Mardi', dayOffset: 1 },
+            { id: 'wednesday-am', label: 'Matin', dayLabel: 'Mercredi', dayOffset: 2 },
+            { id: 'wednesday-pm', label: 'Après-midi', dayLabel: 'Mercredi', dayOffset: 2 },
+            { id: 'thursday-am', label: 'Matin', dayLabel: 'Jeudi', dayOffset: 3 },
+            { id: 'thursday-pm', label: 'Après-midi', dayLabel: 'Jeudi', dayOffset: 3 },
+            { id: 'friday-am', label: 'Matin', dayLabel: 'Vendredi', dayOffset: 4 },
+            { id: 'friday-pm', label: 'Après-midi', dayLabel: 'Vendredi', dayOffset: 4 }
+          ];
+
+          var halfDaySlotMap = halfDaySlots.reduce(function (accumulator, slot) {
+            accumulator[slot.id] = slot;
+            return accumulator;
+          }, {});
+
+          var slotHelperDefaultText =
+            "La date affichée pour l'activité sera calculée automatiquement à partir de la semaine sélectionnée.";
 
           var board = document.getElementById('weeks-board');
           var modal = document.getElementById('activity-modal');
@@ -669,6 +695,13 @@ const server = http.createServer((req, res) => {
           var weekSelect = document.getElementById('week-select');
           var slotSelect = document.getElementById('slot');
           var slotHelper = document.getElementById('slot-helper');
+          if (slotHelper) {
+            if (slotHelper.textContent && slotHelper.textContent.trim()) {
+              slotHelperDefaultText = slotHelper.textContent.trim();
+            } else {
+              slotHelper.textContent = slotHelperDefaultText;
+            }
+          }
           var typeSelect = document.getElementById('activity-type');
           var durationInput = document.getElementById('duration');
           var materialInput = document.getElementById('material');
@@ -1146,7 +1179,14 @@ const server = http.createServer((req, res) => {
             var activityIndex = sourceWeek.activities.findIndex(function (item) {
               return item.id === activityId;
             });
-
+            if (activityIndex === -1) {
+              return false;
+            }
+            var targetWeek = courseData.find(function (week) {
+              return week.id === targetWeekId;
+            });
+            if (!targetWeek) {
+              return false;
             }
             var sourceActivity = sourceWeek.activities[activityIndex];
             var sourceSlotId = normalizeSlotId(sourceActivity.slot);
@@ -1155,18 +1195,40 @@ const server = http.createServer((req, res) => {
               sourceSlotId,
               activityId
             );
-            var movedActivity = sourceWeek.activities.splice(activityIndex, 1)[0];
-            var targetWeek = courseData.find(function (week) {
-              return week.id === targetWeekId;
+            var normalizedTargetSlotId = normalizeSlotId(targetSlotId || sourceSlotId);
+            var sanitizedActivity = sanitizeActivity({
+              id: sourceActivity.id,
+              slot: normalizedTargetSlotId,
+              type: sourceActivity.type,
+              duration: sourceActivity.duration,
+              material: sourceActivity.material,
+              description: sourceActivity.description
             });
-            if (!targetWeek) {
-
+            if (!sanitizedActivity) {
+              return false;
             }
-            var normalizedTargetSlotId = normalizeSlotId(targetSlotId || movedActivity.slot);
             if (typeof targetSlotIndex !== 'number' || targetSlotIndex < 0) {
-              targetSlotIndex = countSlotActivities(targetWeek.activities, normalizedTargetSlotId);
+              targetSlotIndex = countSlotActivities(
+                targetWeek.activities,
+                normalizedTargetSlotId
+              );
             }
-
+            sourceWeek.activities.splice(activityIndex, 1);
+            if (
+              sourceWeek.id === targetWeek.id &&
+              normalizedTargetSlotId === sourceSlotId &&
+              targetSlotIndex > sourceSlotIndex
+            ) {
+              targetSlotIndex -= 1;
+            }
+            insertActivityInSlot(
+              targetWeek.activities,
+              sanitizedActivity,
+              normalizedTargetSlotId,
+              targetSlotIndex
+            );
+            persistState();
+            return true;
           }
 
           function addActivity(weekId, activity) {
@@ -1183,7 +1245,13 @@ const server = http.createServer((req, res) => {
             if (!sanitizedActivity) {
               return false;
             }
-
+            insertActivityInSlot(
+              targetWeek.activities,
+              sanitizedActivity,
+              sanitizedActivity.slot
+            );
+            persistState();
+            return true;
           }
 
           function updateActivity(activityId, newWeekId, updatedData) {
@@ -1200,14 +1268,66 @@ const server = http.createServer((req, res) => {
             if (activityIndex === -1) {
               return false;
             }
-
-            }
             var destinationWeek = courseData.find(function (week) {
               return week.id === newWeekId;
             });
             if (!destinationWeek) {
-              originWeek.activities[activityIndex] = sanitizedActivity;
-
+              return false;
+            }
+            var originalActivity = originWeek.activities[activityIndex];
+            var changes = updatedData || {};
+            var mergedActivity = {
+              id: activityId,
+              slot:
+                typeof changes.slot === 'string' && changes.slot
+                  ? changes.slot
+                  : originalActivity.slot,
+              type:
+                typeof changes.type === 'string' && changes.type
+                  ? changes.type
+                  : originalActivity.type,
+              duration:
+                typeof changes.duration === 'string'
+                  ? changes.duration
+                  : originalActivity.duration,
+              material:
+                typeof changes.material === 'string'
+                  ? changes.material
+                  : originalActivity.material,
+              description:
+                typeof changes.description === 'string'
+                  ? changes.description
+                  : originalActivity.description
+            };
+            var sanitizedActivity = sanitizeActivity(mergedActivity);
+            if (!sanitizedActivity) {
+              return false;
+            }
+            var sourceSlotId = normalizeSlotId(originalActivity.slot);
+            var sourceSlotIndex = getSlotIndexInActivities(
+              originWeek.activities,
+              sourceSlotId,
+              activityId
+            );
+            originWeek.activities.splice(activityIndex, 1);
+            var targetSlotIndex = sourceSlotIndex;
+            if (
+              destinationWeek.id !== originWeek.id ||
+              sanitizedActivity.slot !== sourceSlotId
+            ) {
+              targetSlotIndex = countSlotActivities(
+                destinationWeek.activities,
+                sanitizedActivity.slot
+              );
+            }
+            insertActivityInSlot(
+              destinationWeek.activities,
+              sanitizedActivity,
+              sanitizedActivity.slot,
+              targetSlotIndex
+            );
+            persistState();
+            return true;
           }
 
           function findWeekByActivityId(activityId) {
