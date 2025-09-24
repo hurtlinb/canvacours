@@ -38,7 +38,8 @@
 }
 
 .btn-primary,
-.btn-secondary {
+.btn-secondary,
+.btn-danger {
   border: none;
   border-radius: 999px;
   font-weight: 600;
@@ -79,4 +80,20 @@
 
 .btn-secondary:active {
   transform: translateY(1px);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--red-500), var(--red-600));
+  color: var(--white);
+  box-shadow: 0 12px 24px rgba(217, 55, 55, 0.35);
+}
+
+.btn-danger:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.btn-danger:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 12px rgba(217, 55, 55, 0.25);
 }

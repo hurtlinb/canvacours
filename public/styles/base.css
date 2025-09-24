@@ -11,6 +11,8 @@
   --grey-500: #60718a;
   --grey-200: #d6dce8;
   --white: #ffffff;
+  --red-500: #f05252;
+  --red-600: #d93737;
   --shadow-md: 0 12px 30px rgba(47, 139, 255, 0.15);
   --shadow-sm: 0 6px 16px rgba(47, 139, 255, 0.1);
   --radius-lg: 18px;
@@ -108,6 +110,10 @@ body.modal-open {
 }
 
 .header-new-course {
+  white-space: nowrap;
+}
+
+.header-delete-course {
   white-space: nowrap;
 }
 

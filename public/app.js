@@ -82,6 +82,7 @@
   var modalCloseButtons = modal.querySelectorAll('[data-action="close-modal"]');
   var courseSelector = document.getElementById('course-selector');
   var newCourseButton = document.getElementById('new-course-button');
+  var deleteCourseButton = document.getElementById('delete-course-button');
   var draggedActivityId = null;
   var coursesState = loadCoursesState();
   var courseData = getActiveCourseWeeks();
@@ -99,6 +100,32 @@
   if (newCourseButton) {
     newCourseButton.addEventListener('click', function () {
       createNewCourse();
+    });
+  }
+
+  if (deleteCourseButton) {
+    deleteCourseButton.addEventListener('click', function () {
+      var activeCourse = getActiveCourse();
+      if (!activeCourse) {
+        return;
+      }
+      var courseName = activeCourse.name || 'ce cours';
+      var totalCourses =
+        coursesState && Array.isArray(coursesState.courses)
+          ? coursesState.courses.length
+          : 0;
+      var confirmMessage =
+        'Voulez-vous supprimer le cours « ' +
+        courseName +
+        ' » ? Toutes les activités associées seront supprimées.';
+      if (totalCourses <= 1) {
+        confirmMessage +=
+          "\n\nIl s'agit de votre seul cours ; un cours vide sera recréé automatiquement.";
+      }
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+      deleteCourse(activeCourse.id);
     });
   }
 
@@ -861,28 +888,56 @@
 
   function updateCourseSelector() {
     if (!courseSelector) {
+      updateDeleteCourseButtonState();
       return;
     }
     while (courseSelector.firstChild) {
       courseSelector.removeChild(courseSelector.firstChild);
     }
-    if (!coursesState || !Array.isArray(coursesState.courses)) {
+    var activeCourse = getActiveCourse();
+    var activeId = activeCourse ? activeCourse.id : '';
+    if (coursesState && Array.isArray(coursesState.courses)) {
+      coursesState.courses.forEach(function (course) {
+        if (!course || typeof course !== 'object') {
+          return;
+        }
+        var option = document.createElement('option');
+        option.value = course.id;
+        option.textContent = course.name || 'Cours';
+        courseSelector.appendChild(option);
+      });
+      if (activeId) {
+        courseSelector.value = activeId;
+      }
+    }
+    updateDeleteCourseButtonState();
+  }
+
+  function updateDeleteCourseButtonState() {
+    if (!deleteCourseButton) {
+      return;
+    }
+    var coursesCount =
+      coursesState && Array.isArray(coursesState.courses)
+        ? coursesState.courses.length
+        : 0;
+    deleteCourseButton.disabled = coursesCount === 0;
+    if (coursesCount === 0) {
+      deleteCourseButton.setAttribute(
+        'aria-label',
+        'Supprimer le cours sélectionné'
+      );
+      deleteCourseButton.removeAttribute('title');
       return;
     }
     var activeCourse = getActiveCourse();
-    var activeId = activeCourse ? activeCourse.id : '';
-    coursesState.courses.forEach(function (course) {
-      if (!course || typeof course !== 'object') {
-        return;
-      }
-      var option = document.createElement('option');
-      option.value = course.id;
-      option.textContent = course.name || 'Cours';
-      courseSelector.appendChild(option);
-    });
-    if (activeId) {
-      courseSelector.value = activeId;
-    }
+    var courseName = activeCourse && activeCourse.name ? activeCourse.name : 'cours';
+    deleteCourseButton.setAttribute(
+      'aria-label',
+      'Supprimer le cours « ' + courseName + ' »'
+    );
+    deleteCourseButton.title =
+      'Supprimer le cours « ' + courseName + ' » et toutes ses activités';
   }
 
   function getActiveCourse() {
@@ -956,6 +1011,48 @@
     };
     coursesState.courses.push(newCourse);
     setActiveCourse(newCourse.id);
+  }
+
+  function deleteCourse(courseId) {
+    if (!coursesState || !Array.isArray(coursesState.courses)) {
+      coursesState = createInitialCoursesState();
+    }
+    if (typeof courseId !== 'string' || !courseId) {
+      return false;
+    }
+    var index = coursesState.courses.findIndex(function (course) {
+      return course && course.id === courseId;
+    });
+    if (index === -1) {
+      return false;
+    }
+    var wasActive = coursesState.activeCourseId === courseId;
+    coursesState.courses.splice(index, 1);
+    if (coursesState.courses.length === 0) {
+      coursesState = createInitialCoursesState();
+    } else if (wasActive) {
+      var fallbackIndex = index;
+      if (fallbackIndex >= coursesState.courses.length) {
+        fallbackIndex = coursesState.courses.length - 1;
+      }
+      var fallbackCourse =
+        coursesState.courses[fallbackIndex] || coursesState.courses[0];
+      coursesState.activeCourseId = fallbackCourse.id;
+    }
+    var activeCourse = getActiveCourse();
+    courseData = activeCourse.weeks;
+    if (modal && modal.classList.contains('is-open')) {
+      closeForm();
+    } else {
+      if (weekIdInput) {
+        weekIdInput.value = '';
+      }
+      clearSlotValue();
+    }
+    persistState();
+    updateSlotHelper();
+    updateCourseSelector();
+    return true;
   }
 
   function loadCoursesState() {

@@ -15,7 +15,8 @@
     width: 100%;
   }
 
-  .header-new-course {
+  .header-new-course,
+  .header-delete-course {
     justify-content: center;
     width: 100%;
   }
