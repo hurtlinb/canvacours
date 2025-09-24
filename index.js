@@ -466,10 +466,6 @@ const server = http.createServer((req, res) => {
             <h1>Canvas de cours</h1>
             <p class="app-subtitle">Organisez et ajustez les activités de vos 5 semaines de cours.</p>
           </div>
-          <button type="button" class="btn-primary" id="new-activity-global">
-            <span aria-hidden="true">＋</span>
-            Nouvelle activité
-          </button>
         </div>
       </header>
       <main class="page-content">
@@ -546,18 +542,12 @@ const server = http.createServer((req, res) => {
           var durationInput = document.getElementById('duration');
           var descriptionInput = document.getElementById('description');
           var activityIdInput = document.getElementById('activity-id');
-          var globalAddBtn = document.getElementById('new-activity-global');
           var modalCloseButtons = modal.querySelectorAll('[data-action="close-modal"]');
           var draggedActivityId = null;
           var courseData = loadData();
 
           initializeWeekOptions();
           renderBoard();
-
-          globalAddBtn.addEventListener('click', function () {
-            var defaultWeekId = weekSelect.options.length > 0 ? weekSelect.options[0].value : 'week-1';
-            openForm('create', { weekId: defaultWeekId });
-          });
 
           board.addEventListener('click', function (event) {
             var addTrigger = event.target.closest('[data-action="add-activity"]');
