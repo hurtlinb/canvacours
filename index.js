@@ -116,10 +116,10 @@ const server = http.createServer((req, res) => {
         }
 
         .board {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          display: flex;
+          flex-direction: column;
           gap: 1.5rem;
-          align-items: stretch;
+          width: 100%;
         }
 
         .week-column {
@@ -453,7 +453,7 @@ const server = http.createServer((req, res) => {
 
         @media (max-width: 600px) {
           .board {
-            grid-template-columns: 1fr;
+            gap: 1rem;
           }
 
           .app-header {
