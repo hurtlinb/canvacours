@@ -348,7 +348,7 @@
       input.value = halfDayValue;
       input.checked = startHalfDay === halfDayValue;
       var optionText = halfDayChoiceLabels[halfDayValue] || halfDayChoiceLabels.am;
-      input.setAttribute('aria-label', optionText + ' - début du cours');
+      input.setAttribute('aria-label', optionText);
       input.addEventListener('change', function (event) {
         if (!event.target.checked) {
           return;
@@ -386,8 +386,6 @@
     var slotsWrapper = document.createElement('div');
     slotsWrapper.className = 'week-slots';
 
-    var startSlotId = getWeekStartSlotId(week);
-
     var orderedSlots = getOrderedHalfDaySlotsForWeek(week);
     orderedSlots.forEach(function (slot) {
       var slotSection = document.createElement('section');
@@ -406,19 +404,7 @@
       var slotTitleText = formatSlotDayLabel(week.startDate, slot);
       slotTitle.textContent = slotTitleText || slot.label;
 
-      var isStartSlot = slot.id === startSlotId;
-      if (isStartSlot) {
-        slotSection.classList.add('slot-start');
-      }
-
       slotInfo.appendChild(slotTitle);
-
-      if (isStartSlot) {
-        var startBadge = document.createElement('span');
-        startBadge.className = 'slot-start-badge';
-        startBadge.textContent = 'Début du cours';
-        slotInfo.appendChild(startBadge);
-      }
 
       var slotAddButton = document.createElement('button');
       slotAddButton.type = 'button';
@@ -1420,14 +1406,9 @@
       slotHelper.textContent = slotHelperDefaultText;
       return;
     }
-    var startSlotId = getWeekStartSlotId(week);
     var dayLabel = formatSlotDayLabel(week.startDate, slot);
     if (dayLabel) {
-      if (slot.id === startSlotId) {
-        slotHelper.textContent = dayLabel + ' (début du cours)';
-      } else {
-        slotHelper.textContent = dayLabel;
-      }
+      slotHelper.textContent = dayLabel;
       return;
     }
     if (slot.label) {

@@ -162,15 +162,6 @@
   box-shadow: 0 0 0 3px rgba(47, 139, 255, 0.18);
 }
 
-.slot-section.slot-start {
-  border-color: rgba(47, 139, 255, 0.4);
-  box-shadow: inset 0 0 0 1px rgba(47, 139, 255, 0.12);
-}
-
-.slot-section.slot-start .slot-title {
-  color: var(--blue-600);
-}
-
 .slot-header {
   display: flex;
   align-items: center;
@@ -188,19 +179,6 @@
   font-weight: 700;
   font-size: 1rem;
   color: var(--grey-900);
-}
-
-.slot-start-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.15rem 0.6rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: rgba(47, 139, 255, 0.16);
-  color: var(--blue-500);
-  border-radius: 999px;
 }
 
 .slot-activities {
