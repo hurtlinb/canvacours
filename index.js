@@ -258,6 +258,7 @@ const server = http.createServer((req, res) => {
           border-left: 4px solid rgba(47, 139, 255, 0.4);
           cursor: grab;
           transition: transform 0.2s ease, box-shadow 0.2s ease;
+          position: relative;
         }
 
         .activity-card p {
@@ -367,9 +368,21 @@ const server = http.createServer((req, res) => {
         }
 
         .activity-actions {
+          position: absolute;
+          top: 0.5rem;
+          right: 0.5rem;
           display: flex;
-          justify-content: flex-end;
-          margin-top: 0.25rem;
+        }
+
+        .btn-icon {
+          width: 2.25rem;
+          height: 2.25rem;
+          padding: 0;
+          border-radius: 50%;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1rem;
         }
 
         .btn-tertiary {
@@ -980,11 +993,13 @@ const server = http.createServer((req, res) => {
 
             var editButton = document.createElement('button');
             editButton.type = 'button';
-            editButton.className = 'btn-tertiary';
+            editButton.className = 'btn-tertiary btn-icon';
             editButton.setAttribute('data-action', 'edit-activity');
             editButton.setAttribute('data-week-id', week.id);
             editButton.setAttribute('data-activity-id', activity.id);
-            editButton.textContent = 'Modifier';
+            editButton.setAttribute('aria-label', "Modifier l'activité");
+            editButton.title = "Modifier l'activité";
+            editButton.textContent = '✏️';
 
             actions.appendChild(editButton);
 
