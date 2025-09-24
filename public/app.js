@@ -57,7 +57,7 @@
   };
 
   var slotHelperDefaultText =
-    "La demi-journée est déterminée automatiquement en fonction du créneau depuis lequel vous ajoutez l'activité. La date affichée sera calculée en conséquence.";
+    "La demi-journée est déterminée automatiquement en fonction du créneau depuis lequel vous ajoutez l'activité.";
 
   var board = document.getElementById('weeks-board');
   var modal = document.getElementById('activity-modal');
@@ -916,16 +916,19 @@
       slotHelper.textContent = slotHelperDefaultText;
       return;
     }
-    var computedDate = computeSlotDate(week.startDate, selectedSlotId);
-    var dateText = computedDate ? formatDate(computedDate) : 'Date à définir';
     var dayLabel = formatSlotDayLabel(week.startDate, slot);
-    var helperLabel = slot.label;
-    if (dayLabel && dayLabel !== slot.label) {
-      helperLabel = dayLabel + ' · ' + slot.label;
-    } else if (dayLabel) {
-      helperLabel = dayLabel;
+    var helperParts = [];
+    if (dayLabel) {
+      helperParts.push(dayLabel);
     }
-    slotHelper.textContent = helperLabel + ' — ' + dateText;
+    if (slot.label && slot.label !== dayLabel) {
+      helperParts.push(slot.label);
+    }
+    var helperLabel = helperParts.join(' · ');
+    if (!helperLabel) {
+      helperLabel = slotHelperDefaultText;
+    }
+    slotHelper.textContent = helperLabel;
   }
 
   function saveData() {
@@ -1029,11 +1032,11 @@
     if (!slot) {
       return '';
     }
-    var computedDate = computeSlotDate(week.startDate, slotId);
-    var dateText = computedDate ? formatDate(computedDate) : 'Date à définir';
     var dayLabel = formatSlotDayLabel(week.startDate, slot);
-    var baseLabel = dayLabel && dayLabel !== slot.label ? dayLabel : slot.label;
-    return baseLabel + ' · ' + dateText;
+    if (dayLabel) {
+      return dayLabel;
+    }
+    return slot.label || '';
   }
 
   function formatSlotDayLabel(weekStartDate, slot) {
