@@ -107,7 +107,8 @@ body.modal-open {
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
 }
 
-.header-new-course {
+.header-new-course,
+.header-rename-course {
   white-space: nowrap;
 }
 
