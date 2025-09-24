@@ -1374,7 +1374,11 @@ const server = http.createServer((req, res) => {
             } else {
               formTitle.textContent = 'Ajouter une activité';
               activityIdInput.value = '';
-              setSelectValue(slotSelect, options.slotId);
+              if (typeof options.slotId === 'string' && options.slotId) {
+                setSelectValue(slotSelect, options.slotId);
+              } else {
+                clearSelectValue(slotSelect);
+              }
               typeSelect.value = 'presentation';
               materialInput.value = '';
             }
@@ -1403,19 +1407,37 @@ const server = http.createServer((req, res) => {
             }
           }
 
+          function clearSelectValue(select) {
+            if (!select) {
+              return;
+            }
+            var placeholderOption = select.querySelector('option[value=""]');
+            if (placeholderOption) {
+              placeholderOption.selected = true;
+            } else {
+              select.selectedIndex = -1;
+            }
+            select.value = '';
+          }
+
           function setSelectValue(select, value) {
+            if (!select) {
+              return;
+            }
+            if (typeof value !== 'string' || !value) {
+              clearSelectValue(select);
+              return;
+            }
             var found = false;
-            if (typeof value === 'string') {
-              for (var i = 0; i < select.options.length; i += 1) {
-                if (select.options[i].value === value) {
-                  select.selectedIndex = i;
-                  found = true;
-                  break;
-                }
+            for (var i = 0; i < select.options.length; i += 1) {
+              if (select.options[i].value === value) {
+                select.selectedIndex = i;
+                found = true;
+                break;
               }
             }
-            if (!found && select.options.length > 0) {
-              select.selectedIndex = 0;
+            if (!found) {
+              clearSelectValue(select);
             }
           }
 
@@ -1465,6 +1487,13 @@ const server = http.createServer((req, res) => {
               return;
             }
             slotSelect.innerHTML = '';
+            var placeholderOption = document.createElement('option');
+            placeholderOption.value = '';
+            placeholderOption.textContent = 'Sélectionnez une demi-journée';
+            placeholderOption.disabled = true;
+            placeholderOption.selected = true;
+            placeholderOption.defaultSelected = true;
+            slotSelect.appendChild(placeholderOption);
             halfDaySlots.forEach(function (slot) {
               var option = document.createElement('option');
               option.value = slot.id;
