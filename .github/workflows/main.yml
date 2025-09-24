@@ -36,7 +36,6 @@ jobs:
 
             git pull
 
-            npm stop
-            npm start
+            npm restart
 
             echo "✅ Déploiement terminé"
