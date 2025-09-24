@@ -57,7 +57,7 @@
   };
 
   var slotHelperDefaultText =
-    "La demi-journée est déterminée automatiquement en fonction du créneau depuis lequel vous ajoutez l'activité.";
+    "Choisissez la semaine et le moment de la journée pour positionner l'activité.";
 
   var board = document.getElementById('weeks-board');
   var modal = document.getElementById('activity-modal');
@@ -65,6 +65,7 @@
   var formTitle = document.getElementById('form-title');
   var weekIdInput = document.getElementById('week-id');
   var slotInput = document.getElementById('slot');
+  var timeOfDayRadios = document.querySelectorAll('input[name="timeOfDay"]');
   var slotHelper = document.getElementById('slot-helper');
   if (slotHelper) {
     if (slotHelper.textContent && slotHelper.textContent.trim()) {
@@ -72,6 +73,21 @@
     } else {
       slotHelper.textContent = slotHelperDefaultText;
     }
+  }
+  if (weekIdInput) {
+    weekIdInput.addEventListener('change', function () {
+      updateSlotHelper();
+    });
+  }
+  if (timeOfDayRadios.length > 0) {
+    Array.prototype.forEach.call(timeOfDayRadios, function (radio) {
+      radio.addEventListener('change', function (event) {
+        if (!event.target.checked) {
+          return;
+        }
+        applyTimeOfDay(event.target.value);
+      });
+    });
   }
   var typeSelect = document.getElementById('activity-type');
   var durationInput = document.getElementById('duration');
@@ -82,6 +98,7 @@
   var draggedActivityId = null;
   var courseData = loadData();
 
+  updateWeekSelectOptions();
   updateSlotHelper();
   renderBoard();
 
@@ -173,6 +190,7 @@
   });
 
   function renderBoard() {
+    var currentWeekSelection = weekIdInput ? weekIdInput.value : '';
     while (board.firstChild) {
       board.removeChild(board.firstChild);
     }
@@ -180,6 +198,7 @@
       var column = createWeekColumn(week);
       board.appendChild(column);
     });
+    updateWeekSelectOptions(currentWeekSelection);
     updateSlotHelper();
   }
 
@@ -764,7 +783,7 @@
       }
     }
     if (weekIdInput) {
-      weekIdInput.value = targetWeekId;
+      updateWeekSelectOptions(targetWeekId);
     }
     if (mode === 'edit' && options.activity) {
       formTitle.textContent = 'Modifier une activité';
@@ -805,7 +824,9 @@
     form.reset();
     activityIdInput.value = '';
     if (weekIdInput) {
-      weekIdInput.value = '';
+      if (weekIdInput.options && weekIdInput.options.length > 0) {
+        weekIdInput.selectedIndex = 0;
+      }
     }
     clearSlotValue();
   }
@@ -815,9 +836,11 @@
       if (slotHelper) {
         slotHelper.textContent = slotHelperDefaultText;
       }
+      syncTimeOfDayRadios('');
       return;
     }
     slotInput.value = '';
+    syncTimeOfDayRadios('');
     updateSlotHelper();
   }
 
@@ -829,11 +852,14 @@
       var trimmed = value.trim();
       if (trimmed && halfDaySlotMap[trimmed]) {
         slotInput.value = trimmed;
+        syncTimeOfDayRadios(trimmed);
         updateSlotHelper();
         return;
       }
       if (trimmed) {
-        slotInput.value = normalizeSlotId(trimmed);
+        var normalized = normalizeSlotId(trimmed);
+        slotInput.value = normalized;
+        syncTimeOfDayRadios(normalized);
         updateSlotHelper();
         return;
       }
@@ -922,6 +948,90 @@
       return;
     }
     slotHelper.textContent = slotHelperDefaultText;
+  }
+
+  function updateWeekSelectOptions(preferredWeekId) {
+    if (!weekIdInput) {
+      return;
+    }
+    var targetValue =
+      typeof preferredWeekId === 'string' && preferredWeekId
+        ? preferredWeekId
+        : weekIdInput.value;
+    var fragment = document.createDocumentFragment();
+    var hasTarget = false;
+    courseData.forEach(function (week) {
+      var option = document.createElement('option');
+      option.value = week.id;
+      option.textContent = week.name;
+      if (week.id === targetValue) {
+        option.selected = true;
+        hasTarget = true;
+      }
+      fragment.appendChild(option);
+    });
+    weekIdInput.innerHTML = '';
+    weekIdInput.appendChild(fragment);
+    if (!hasTarget && weekIdInput.options.length > 0) {
+      weekIdInput.value = weekIdInput.options[0].value;
+    }
+  }
+
+  function applyTimeOfDay(timeOfDay) {
+    if (!slotInput) {
+      return;
+    }
+    var targetSlotId = deriveSlotForTimeOfDay(slotInput.value, timeOfDay);
+    setSlotValue(targetSlotId);
+  }
+
+  function deriveSlotForTimeOfDay(currentSlotId, timeOfDay) {
+    var normalizedTime = timeOfDay === 'pm' ? 'pm' : 'am';
+    if (currentSlotId && halfDaySlotMap[currentSlotId]) {
+      var baseCandidate = currentSlotId.replace(/-(?:am|pm)$/, '');
+      if (baseCandidate && baseCandidate !== currentSlotId) {
+        var candidateId = baseCandidate + '-' + normalizedTime;
+        if (halfDaySlotMap[candidateId]) {
+          return candidateId;
+        }
+      }
+    }
+    var fallback = findSlotForTimeOfDay(normalizedTime);
+    if (fallback) {
+      return fallback;
+    }
+    if (currentSlotId && halfDaySlotMap[currentSlotId]) {
+      return currentSlotId;
+    }
+    return halfDaySlots.length > 0 ? halfDaySlots[0].id : '';
+  }
+
+  function findSlotForTimeOfDay(timeOfDay) {
+    var suffix = timeOfDay === 'pm' ? '-pm' : '-am';
+    for (var i = 0; i < halfDaySlots.length; i += 1) {
+      var slot = halfDaySlots[i];
+      if (slot && typeof slot.id === 'string' && slot.id.endsWith(suffix)) {
+        return slot.id;
+      }
+    }
+    return '';
+  }
+
+  function getTimeOfDayFromSlot(slotId) {
+    if (typeof slotId === 'string' && /-pm$/.test(slotId)) {
+      return 'pm';
+    }
+    return 'am';
+  }
+
+  function syncTimeOfDayRadios(slotId) {
+    if (timeOfDayRadios.length === 0) {
+      return;
+    }
+    var timeOfDay = getTimeOfDayFromSlot(slotId);
+    Array.prototype.forEach.call(timeOfDayRadios, function (radio) {
+      radio.checked = radio.value === timeOfDay;
+    });
   }
 
   function saveData() {

@@ -55,3 +55,36 @@
   align-items: center;
   margin-top: 1.5rem;
 }
+
+.week-planning-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.week-planning-controls select {
+  min-width: 160px;
+}
+
+.time-of-day-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(47, 139, 255, 0.35);
+  background: rgba(247, 251, 255, 0.9);
+}
+
+.time-of-day-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  color: var(--grey-700);
+}
+
+.time-of-day-option input[type='radio'] {
+  accent-color: var(--blue-500);
+}

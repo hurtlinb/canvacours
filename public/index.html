@@ -32,7 +32,41 @@
           <h2 id="form-title">Ajouter une activité</h2>
           <form id="activity-form">
             <input type="hidden" name="activityId" id="activity-id" />
-            <input type="hidden" name="weekId" id="week-id" value="" />
+            <div class="form-group">
+              <label for="week-id">Semaine</label>
+              <div class="week-planning-controls">
+                <select id="week-id" name="weekId"></select>
+                <div
+                  class="time-of-day-group"
+                  role="radiogroup"
+                  aria-label="Moment de la journée"
+                >
+                  <label class="time-of-day-option">
+                    <input
+                      type="radio"
+                      name="timeOfDay"
+                      id="time-of-day-am"
+                      value="am"
+                      checked
+                    />
+                    <span>Matin</span>
+                  </label>
+                  <label class="time-of-day-option">
+                    <input
+                      type="radio"
+                      name="timeOfDay"
+                      id="time-of-day-pm"
+                      value="pm"
+                    />
+                    <span>Après-midi</span>
+                  </label>
+                </div>
+              </div>
+              <p class="form-helper" id="slot-helper">
+                Choisissez la semaine et précisez si l'activité se déroule le matin
+                ou l'après-midi.
+              </p>
+            </div>
             <input type="hidden" name="slot" id="slot" value="" />
             <div class="form-group">
               <label for="activity-type">Type d'activité</label>
