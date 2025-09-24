@@ -376,6 +376,7 @@ const server = http.createServer((req, res) => {
           top: 0.5rem;
           right: 0.5rem;
           display: flex;
+          gap: 0.35rem;
         }
 
         .btn-icon {
@@ -758,6 +759,14 @@ const server = http.createServer((req, res) => {
               return;
             }
 
+            var deleteTrigger = event.target.closest('[data-action="delete-activity"]');
+            if (deleteTrigger) {
+              var deleteWeekId = deleteTrigger.getAttribute('data-week-id');
+              var deleteActivityId = deleteTrigger.getAttribute('data-activity-id');
+              deleteActivity(deleteActivityId, deleteWeekId);
+              return;
+            }
+
             var editTrigger = event.target.closest('[data-action="edit-activity"]');
             if (editTrigger) {
               var editWeekId = editTrigger.getAttribute('data-week-id');
@@ -1014,6 +1023,18 @@ const server = http.createServer((req, res) => {
             editButton.textContent = '✏️';
 
             actions.appendChild(editButton);
+
+            var deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.className = 'btn-tertiary btn-icon';
+            deleteButton.setAttribute('data-action', 'delete-activity');
+            deleteButton.setAttribute('data-week-id', week.id);
+            deleteButton.setAttribute('data-activity-id', activity.id);
+            deleteButton.setAttribute('aria-label', "Supprimer l'activité");
+            deleteButton.title = "Supprimer l'activité";
+            deleteButton.textContent = '🗑️';
+
+            actions.appendChild(deleteButton);
 
             card.appendChild(top);
             card.appendChild(material);
@@ -1354,6 +1375,33 @@ const server = http.createServer((req, res) => {
               sanitizedActivity.slot,
               targetSlotIndex
             );
+            persistState();
+            return true;
+          }
+
+          function deleteActivity(activityId, weekId) {
+            if (!activityId) {
+              return false;
+            }
+            var targetWeek = null;
+            if (typeof weekId === 'string' && weekId) {
+              targetWeek = courseData.find(function (week) {
+                return week.id === weekId;
+              });
+            }
+            if (!targetWeek) {
+              targetWeek = findWeekByActivityId(activityId);
+            }
+            if (!targetWeek) {
+              return false;
+            }
+            var activityIndex = targetWeek.activities.findIndex(function (item) {
+              return item.id === activityId;
+            });
+            if (activityIndex === -1) {
+              return false;
+            }
+            targetWeek.activities.splice(activityIndex, 1);
             persistState();
             return true;
           }
