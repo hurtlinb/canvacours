@@ -673,16 +673,24 @@ const server = http.createServer((req, res) => {
           };
 
           var halfDaySlots = [
-            { id: 'monday-am', label: 'Matin', dayLabel: 'Lundi', dayOffset: 0 },
-            { id: 'monday-pm', label: 'Après-midi', dayLabel: 'Lundi', dayOffset: 0 },
-            { id: 'tuesday-am', label: 'Matin', dayLabel: 'Mardi', dayOffset: 1 },
-            { id: 'tuesday-pm', label: 'Après-midi', dayLabel: 'Mardi', dayOffset: 1 },
-            { id: 'wednesday-am', label: 'Matin', dayLabel: 'Mercredi', dayOffset: 2 },
-            { id: 'wednesday-pm', label: 'Après-midi', dayLabel: 'Mercredi', dayOffset: 2 },
-            { id: 'thursday-am', label: 'Matin', dayLabel: 'Jeudi', dayOffset: 3 },
-            { id: 'thursday-pm', label: 'Après-midi', dayLabel: 'Jeudi', dayOffset: 3 },
-            { id: 'friday-am', label: 'Matin', dayLabel: 'Vendredi', dayOffset: 4 },
-            { id: 'friday-pm', label: 'Après-midi', dayLabel: 'Vendredi', dayOffset: 4 }
+            {
+              id: 'monday-am',
+              label: 'Demi-journée 1',
+              dayLabel: 'Lundi matin',
+              dayOffset: 0
+            },
+            {
+              id: 'wednesday-am',
+              label: 'Demi-journée 2',
+              dayLabel: 'Mercredi matin',
+              dayOffset: 2
+            },
+            {
+              id: 'friday-am',
+              label: 'Demi-journée 3',
+              dayLabel: 'Vendredi matin',
+              dayOffset: 4
+            }
           ];
 
           var halfDaySlotMap = halfDaySlots.reduce(function (accumulator, slot) {
