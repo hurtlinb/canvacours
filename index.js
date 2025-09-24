@@ -71,6 +71,16 @@ const server = http.createServer((req, res) => {
           max-width: 640px;
         }
 
+        .header-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .header-reset-button {
+          white-space: nowrap;
+        }
+
         .app-header h1 {
           margin: 0 0 0.5rem;
           font-size: 2.75rem;
@@ -611,6 +621,16 @@ const server = http.createServer((req, res) => {
           <div class="header-text">
             <h1>Canvas de cours</h1>
           </div>
+          <div class="header-actions">
+            <button
+              type="button"
+              class="btn-secondary header-reset-button"
+              id="reset-app-button"
+              title="Supprimer toutes les activités"
+            >
+              🔄 Réinitialiser
+            </button>
+          </div>
         </div>
       </header>
       <main class="page-content">
@@ -737,6 +757,7 @@ const server = http.createServer((req, res) => {
               slotHelper.textContent = slotHelperDefaultText;
             }
           }
+          var resetButton = document.getElementById('reset-app-button');
           var typeSelect = document.getElementById('activity-type');
           var durationInput = document.getElementById('duration');
           var materialInput = document.getElementById('material');
@@ -752,6 +773,10 @@ const server = http.createServer((req, res) => {
 
           if (slotSelect) {
             slotSelect.addEventListener('change', updateSlotHelper);
+          }
+
+          if (resetButton) {
+            resetButton.addEventListener('click', handleResetButtonClick);
           }
 
           board.addEventListener('click', function (event) {
@@ -832,6 +857,23 @@ const server = http.createServer((req, res) => {
               closeForm();
             }
           });
+
+          function handleResetButtonClick() {
+            var confirmationMessage =
+              'Voulez-vous vraiment réinitialiser le canvas ? Toutes les activités seront supprimées.';
+            if (typeof window.confirm === 'function' && !window.confirm(confirmationMessage)) {
+              return;
+            }
+            closeForm();
+            draggedActivityId = null;
+            courseData.forEach(function (week) {
+              if (!week || typeof week !== 'object') {
+                return;
+              }
+              week.activities = [];
+            });
+            persistState();
+          }
 
           function renderBoard() {
             while (board.firstChild) {
