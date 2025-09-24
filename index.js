@@ -71,21 +71,6 @@ const server = http.createServer((req, res) => {
           max-width: 640px;
         }
 
-        .app-kicker {
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          font-size: 0.75rem;
-          margin: 0 0 0.5rem;
-          opacity: 0.85;
-        }
-
-        .app-version {
-          margin-left: 0.35rem;
-          font-weight: 600;
-          letter-spacing: normal;
-          text-transform: none;
-        }
-
         .app-header h1 {
           margin: 0 0 0.5rem;
           font-size: 2.75rem;
@@ -312,18 +297,19 @@ const server = http.createServer((req, res) => {
         .badge {
           display: inline-flex;
           align-items: center;
-          gap: 0.35rem;
+          justify-content: center;
           font-weight: 600;
-          border-radius: 999px;
-          padding: 0.3rem 0.75rem;
-          font-size: 0.82rem;
+          border-radius: 50%;
+          width: 2.25rem;
+          height: 2.25rem;
+          font-size: 1.1rem;
           background: rgba(90, 170, 255, 0.22);
           color: var(--grey-900);
+          flex-shrink: 0;
         }
 
         .badge::before {
-          content: '•';
-          font-size: 1rem;
+          content: none;
         }
 
         .badge-presentation {
@@ -356,6 +342,14 @@ const server = http.createServer((req, res) => {
           margin: 0 0 0.75rem;
           color: var(--grey-700);
           font-size: 0.95rem;
+        }
+
+        .activity-material {
+          margin: 0 0 0.75rem;
+          font-size: 0.85rem;
+          color: var(--grey-500);
+          font-weight: 600;
+          word-break: break-word;
         }
 
         .activity-duration {
@@ -590,9 +584,7 @@ const server = http.createServer((req, res) => {
       <header class="app-header">
         <div class="header-content">
           <div class="header-text">
-            <p class="app-kicker">Planification pédagogique <span class="app-version">v${version}</span></p>
             <h1>Canvas de cours</h1>
-            <p class="app-subtitle">Organisez et ajustez les activités de vos 5 semaines de cours.</p>
           </div>
         </div>
       </header>
@@ -600,7 +592,7 @@ const server = http.createServer((req, res) => {
         <section class="board" id="weeks-board" aria-live="polite"></section>
       </main>
       <footer class="app-footer">
-        <p>Version ${version}</p>
+        <p>v${version}</p>
       </footer>
       <div class="modal" id="activity-modal" aria-hidden="true">
         <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="form-title">
@@ -622,15 +614,19 @@ const server = http.createServer((req, res) => {
             <div class="form-group">
               <label for="activity-type">Type d'activité</label>
               <select id="activity-type" name="activityType" required>
-                <option value="presentation">Présentation</option>
-                <option value="exercice">Exercice</option>
-                <option value="evaluation">Évaluation</option>
-                <option value="groupe">Travail de groupe</option>
+                <option value="presentation">🎤 Présentation</option>
+                <option value="exercice">📝 Exercice</option>
+                <option value="evaluation">📊 Évaluation</option>
+                <option value="groupe">🤝 Travail de groupe</option>
               </select>
             </div>
             <div class="form-group">
               <label for="duration">Temps prévu</label>
               <input id="duration" name="duration" type="text" placeholder="Ex. 2h, 45 minutes" />
+            </div>
+            <div class="form-group">
+              <label for="material">Matériel</label>
+              <input id="material" name="material" type="text" placeholder="Ex. diaporama_introduction.pdf" />
             </div>
             <div class="form-group">
               <label for="description">Description</label>
@@ -664,19 +660,7 @@ const server = http.createServer((req, res) => {
             groupe: 'Travail de groupe'
           };
 
-          var halfDaySlots = [
-            { id: 'day1-morning', label: 'Matin', dayLabel: 'Jour 1', dayOffset: 0 },
-            { id: 'day1-afternoon', label: 'Après-midi', dayLabel: 'Jour 1', dayOffset: 0 },
-            { id: 'day2-morning', label: 'Matin (jour suivant)', dayLabel: 'Jour 2', dayOffset: 1 }
-          ];
 
-          var halfDaySlotMap = halfDaySlots.reduce(function (accumulator, slot) {
-            accumulator[slot.id] = slot;
-            return accumulator;
-          }, {});
-
-          var slotHelperDefaultText =
-            'La date affichée pour l\'activité sera calculée automatiquement à partir de la semaine sélectionnée.';
 
           var board = document.getElementById('weeks-board');
           var modal = document.getElementById('activity-modal');
@@ -687,6 +671,7 @@ const server = http.createServer((req, res) => {
           var slotHelper = document.getElementById('slot-helper');
           var typeSelect = document.getElementById('activity-type');
           var durationInput = document.getElementById('duration');
+          var materialInput = document.getElementById('material');
           var descriptionInput = document.getElementById('description');
           var activityIdInput = document.getElementById('activity-id');
           var modalCloseButtons = modal.querySelectorAll('[data-action="close-modal"]');
@@ -763,6 +748,7 @@ const server = http.createServer((req, res) => {
               slot: formData.get('slot'),
               type: formData.get('activityType'),
               duration: (formData.get('duration') || '').trim(),
+              material: (formData.get('material') || '').trim(),
               description: (formData.get('description') || '').trim()
             };
 
@@ -929,8 +915,13 @@ const server = http.createServer((req, res) => {
 
             var badge = document.createElement('span');
             var typeKey = activity.type && typeLabels[activity.type] ? activity.type : 'presentation';
+            var badgeLabel = typeLabels[typeKey] || 'Activité';
+            var badgeIcon = typeIcons[typeKey] || '🎯';
             badge.className = 'badge badge-' + typeKey;
-            badge.textContent = typeLabels[typeKey];
+            badge.textContent = badgeIcon;
+            badge.setAttribute('role', 'img');
+            badge.setAttribute('aria-label', badgeLabel);
+            badge.title = badgeLabel;
 
             var dateLabel = document.createElement('span');
             dateLabel.className = 'activity-date';
@@ -942,6 +933,12 @@ const server = http.createServer((req, res) => {
             var description = document.createElement('p');
             description.className = 'activity-description';
             description.textContent = activity.description || 'Description à préciser.';
+
+            var material = document.createElement('p');
+            material.className = 'activity-material';
+            material.textContent = activity.material
+              ? 'Matériel : ' + activity.material
+              : 'Matériel : à préciser';
 
             var duration = document.createElement('p');
             duration.className = 'activity-duration';
@@ -962,6 +959,7 @@ const server = http.createServer((req, res) => {
 
             card.appendChild(top);
             card.appendChild(description);
+            card.appendChild(material);
             card.appendChild(duration);
             card.appendChild(actions);
 
@@ -1227,10 +1225,7 @@ const server = http.createServer((req, res) => {
               updatedData.type && typeLabels[updatedData.type] ? updatedData.type : 'presentation';
             var sanitizedActivity = {
               id: updatedData.id,
-              slot: normalizeSlotId(updatedData.slot),
-              type: sanitizedType,
-              duration: updatedData.duration || '',
-              description: updatedData.description || ''
+
             };
             if (
               originWeek.id === newWeekId &&
@@ -1278,6 +1273,7 @@ const server = http.createServer((req, res) => {
                   ? options.activity.type
                   : 'presentation';
               durationInput.value = options.activity.duration || '';
+              materialInput.value = options.activity.material || '';
               descriptionInput.value = options.activity.description || '';
             } else {
               formTitle.textContent = 'Ajouter une activité';
@@ -1285,6 +1281,7 @@ const server = http.createServer((req, res) => {
               setSelectValue(weekSelect, options.weekId);
               setSelectValue(slotSelect, options.slotId);
               typeSelect.value = 'presentation';
+              materialInput.value = '';
             }
             updateSlotHelper();
             modal.classList.add('is-open');
@@ -1453,6 +1450,7 @@ const server = http.createServer((req, res) => {
               slot: normalizeSlotId(activity.slot),
               type: type,
               duration: activity.duration || '',
+              material: typeof activity.material === 'string' ? activity.material.trim() : '',
               description: activity.description || ''
             };
           }
