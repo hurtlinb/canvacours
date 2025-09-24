@@ -71,21 +71,6 @@ const server = http.createServer((req, res) => {
           max-width: 640px;
         }
 
-        .app-kicker {
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          font-size: 0.75rem;
-          margin: 0 0 0.5rem;
-          opacity: 0.85;
-        }
-
-        .app-version {
-          margin-left: 0.35rem;
-          font-weight: 600;
-          letter-spacing: normal;
-          text-transform: none;
-        }
-
         .app-header h1 {
           margin: 0 0 0.5rem;
           font-size: 2.75rem;
@@ -483,7 +468,6 @@ const server = http.createServer((req, res) => {
       <header class="app-header">
         <div class="header-content">
           <div class="header-text">
-            <p class="app-kicker">Planification pédagogique <span class="app-version">v${version}</span></p>
             <h1>Canvas de cours</h1>
           </div>
         </div>
@@ -492,7 +476,7 @@ const server = http.createServer((req, res) => {
         <section class="board" id="weeks-board" aria-live="polite"></section>
       </main>
       <footer class="app-footer">
-        <p>Version ${version}</p>
+        <p>v${version}</p>
       </footer>
       <div class="modal" id="activity-modal" aria-hidden="true">
         <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="form-title">
