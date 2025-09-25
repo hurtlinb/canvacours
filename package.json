@@ -1,9 +1,13 @@
 {
   "name": "canvacours",
-  "version": "1.5.0",
+  "version": "2.0.0",
   "description": "Basic Node.js application with a simple HTTP server.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mariadb": "^3.3.0"
   }
 }
