@@ -1,8 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const envFilePath = path.join(__dirname, '..', '.env');
-if (fs.existsSync(envFilePath)) {
+const envPaths = [path.join(__dirname, '..', '.env'), path.join(__dirname, '..', '..', '.env')];
+
+envPaths.forEach((envFilePath) => {
+  if (!fs.existsSync(envFilePath)) {
+    return;
+  }
+
   const envContent = fs.readFileSync(envFilePath, 'utf8');
   envContent.split(/\r?\n/).forEach((line) => {
     const trimmed = line.trim();
@@ -25,7 +30,7 @@ if (fs.existsSync(envFilePath)) {
       process.env[key] = value;
     }
   });
-}
+});
 
 const { version } = require('../package.json');
 
