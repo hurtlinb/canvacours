@@ -71,7 +71,7 @@ const DB_CONFIG = {
   )
 };
 
-const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const PUBLIC_DIR = path.join(__dirname, '..', '..', 'frontend');
 const INDEX_FILE = path.join(PUBLIC_DIR, 'index.html');
 
 module.exports = {
